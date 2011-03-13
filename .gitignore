@@ -1,3 +1,6 @@
 
 *.puo
 *.suo
+/config.php
+*.txt
+/test.php

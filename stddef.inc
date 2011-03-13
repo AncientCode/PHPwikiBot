@@ -1,4 +1,3 @@
 <?php
-global $inc;
-$inc = dirname(__FILE__).'/';
-define('MB_VERSION', 0.1);
+define('INC', dirname(__FILE__).'/');
+define('PWB_VERSION', 0.1);

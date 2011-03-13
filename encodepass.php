@@ -4,8 +4,10 @@
  * 
  * @author Xiaomao
  * @package PHPwikiBot
- * @name encodepass.php
+ * @name Password Encoder
  */
+
+/** Get the configuration File */
 if (is_readable(dirname(__FILE__).'/config.php')):
 	require dirname(__FILE__).'/config.php';
 else:
