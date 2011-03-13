@@ -28,11 +28,11 @@
     {
     "ProjRelPath" = "T"
     }
-    "confgen.php"
+    "test.php"
     {
     "ProjRelPath" = "T"
     }
-    "stddef.inc"
+    "exception.inc"
     {
     "ProjRelPath" = "T"
     }
@@ -40,7 +40,11 @@
     {
     "ProjRelPath" = "T"
     }
-    "test.php"
+    "pass.bat"
+    {
+    "ProjRelPath" = "T"
+    }
+    "confgen.php"
     {
     "ProjRelPath" = "T"
     }
@@ -48,7 +52,7 @@
     {
     "ProjRelPath" = "T"
     }
-    "pass.bat"
+    "stddef.inc"
     {
     "ProjRelPath" = "T"
     }

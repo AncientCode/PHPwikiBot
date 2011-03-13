@@ -11,26 +11,7 @@
  */
 require dirname(__FILE__).'/stddef.inc';
 require_once INC.'config.php';
-
-/***Exceptions***/
-
-
-/**
- * The exception Login Failure (1xx)
- * 
- * Error Codes:
- * 100 General Failure
- * 
- * @package Exception
- */
-class LoginFailure extends Exception {
-	final public function getMessage() {
-		return 'LoginFailure: '.$this->message;
-	}
-	final public function getCode() {
-		return $this->code + 100;
-	}
-}
+require_once INC.'exception.inc';
 
 
 /**
@@ -72,28 +53,27 @@ class PHPwikiBot {
 	 * @var bool Whether to output some unimportant messages
 	 */
 	protected $out = true;
-	
+	protected $post;
+	protected $get;
 	
 	/**
 	 * Constructor, initialize the object and login
 	 *
 	 * @param string $user A username in config.php
 	 * @param bool $slient Be quiet
-	 * @return void This function throws exception rather than return value
+	 * @return void This function throws exception rather than return value since constructor doesn't return
 	 * @throws LoginFailure from PHPwikiBot::login
 	 *
 	 */
 	public function __construct($user, $slient = false) {
 		$this->conf = $GLOBALS['users'][$user]; // Map the user configuration array
 		$this->useragent = $GLOBALS['useragent']; // Define the user-agent
-		if (PHP_SAPI == 'cli' || PHP_SAPI == 'embed'): define('EOL', PHP_EOL); // we should use the platform's line break for cli
-		else: define('EOL', '<br />'.PHP_EOL);// but <br /> with a line break for web
-		endif;
 		$this->user = $user;
 		$this->wikid = $this->conf['wiki'];
 		$this->wikiname = $GLOBALS['wiki'][$this->wikid]['name'];
 		$this->api_url = $GLOBALS['wiki'][$this->wikid]['api'];
 		if ($slient) $this->out = false;
+		$this->conninit();
 		//if (function_exists('openssl_decrypt')):
 			$pass = openssl_decrypt($this->conf['password'], 'AES-128-ECB', $GLOBALS['key']);
 		/*else:
@@ -108,6 +88,9 @@ class PHPwikiBot {
 		}
 	}
 	
+	/**
+	 * Clear the cookies when the script terminates
+	 */
 	function __destruct() {
 		$this->logout();
 	}
@@ -166,7 +149,59 @@ class PHPwikiBot {
 	}
 	
 	
-	
+	/**
+	 * Fetch a page from the wiki
+	 *
+	 * @param string $page The page name
+	 * @return string The page content
+	 * @throws GetPageFailure when failure
+	 *
+	 */
+	public function get_page($page) {
+		$response = $this->getAPI('action=query&prop=revisions&titles='.urlencode($page).'&rvprop=content');
+		//var_dump($response);
+		if (is_array($response)) {
+			$array = $response['query']['pages'];
+			//var_dump($array);
+			if (isset($array[-1])) {
+				if (isset($array[-1]['missing'])):
+					throw new GetPageFailure('Page doesn\'t exist!', 201);
+				elseif (isset($array[-1]['invalid'])):
+					throw new GetPageFailure('Page title invaild', 202);
+				elseif (isset($array[-1]['special'])):
+					throw new GetPageFailure('Special Page', 203);
+				else:
+					throw new GetPageFailure('General Failure', 200);
+				endif;
+			} else {
+				$array = array_shift($array);
+				//var_dump($array);
+				$pageid = $array['pageid'];
+				//var_dump($pageid);
+				return $response['query']['pages'][$pageid]['revisions'][0]['*'];
+			}
+		} else {
+			throw new GetPageFailure('General Failure', 200);
+		}
+	}
+
+	/**
+	 * Perform a get request to the API
+	 *
+	 * @param string $query The query string to pass the the API, without ?
+	 * @return mixed The unserialized data from the API
+	 *
+	 */
+	protected function getAPI($query) {
+		curl_setopt($this->get, CURLOPT_URL, $this->api_url.'?'.$query.'&maxlag='.$this->max_lag.'&format=php');
+		$response = curl_exec($this->get);
+		if (curl_errno($this->get)) return curl_error($this->get);
+		/*$fh = fopen('test.txt', 'a');
+		fwrite($fh, $response);
+		fclose($fh);*/
+		return unserialize($response);
+	}
+
 	/**
 	 * Perform a post request to the API
 	 *
@@ -175,27 +210,40 @@ class PHPwikiBot {
 	 *
 	 */
 	protected function postAPI($postdata = '') {
-		$ch = curl_init();
 		if ($postdata !== '') $postdata .= '&';
 		$postdata .= 'format=php';
 		//echo $postdata, EOL;
+		curl_setopt($this->post, CURLOPT_POSTFIELDS, $postdata);
+		$response = curl_exec($this->post);
+		if (curl_errno($this->post)) return curl_error($this->post);
+		//echo $response, EOL;
+		return unserialize($response);
+	}
+	
+	
+	/**
+	 * Initiailze the class property, the $get and $post handle
+	 *
+	 * @return void No return value
+	 *
+	 */
+	protected function conninit() {
+		$this->get = curl_init();
+		$this->post = curl_init();
 		$cfg = array(
-				CURLOPT_URL => $this->api_url,
 				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_POST => true,
 				CURLOPT_COOKIEJAR => 'cookie.txt',
 				CURLOPT_COOKIEFILE => 'cookie.txt',
 				CURLOPT_USERAGENT => $this->useragent,
-				CURLOPT_POSTFIELDS => $postdata,
-				CURLOPT_HTTPHEADER => array('Content-Type: application/x-www-form-urlencoded;charset=UTF-8'),
 				CURLOPT_HEADER => false,
 				);
-		curl_setopt_array($ch, $cfg);
-		unset($cfg);
-		$response = curl_exec($ch);
-		if (curl_errno($ch)) return curl_error($ch);
-		curl_close($ch);
-		//echo $response, EOL;
-		return unserialize($response);
+		$post = array(
+				CURLOPT_URL => $this->api_url,
+				CURLOPT_POST => true,
+				CURLOPT_HTTPHEADER => array('Content-Type: application/x-www-form-urlencoded;charset=UTF-8'),
+				);
+		curl_setopt_array($this->get, $cfg);
+		curl_setopt_array($this->post, $cfg);
+		curl_setopt_array($this->post, $post);
 	}
 }
