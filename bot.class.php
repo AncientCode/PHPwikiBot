@@ -31,11 +31,11 @@ class PHPwikiBot {
 	/**
 	 * @var string Absolute path to API
 	 */
-	protected $api_url;
+	public $api_url;
 	/**
 	 * @var string Bot's user-agent
 	 */
-	protected $useragent;
+	public $useragent;
 	/**
 	 * @var string a key in $wiki array
 	 */
@@ -43,7 +43,7 @@ class PHPwikiBot {
 	/**
 	 * @var string Wiki's full name or a friendly name
 	 */
-	protected $wikiname;
+	public $wikiname;
 	/**
 	 * Replicate DB's slave some times have trouble syncing, set this to 5
 	 * @var int Fix slave DB's lag problem, set to 5
@@ -132,7 +132,7 @@ class PHPwikiBot {
 				// die('Login failed: ' . $response . EOL);
 				echo 'Debugging Info:', EOL;
 				var_dump($response);
-				throw new LoginFailure('Can\'t login!', 0);
+				throw new LoginFailure('Can\'t Login', 100);
 			}
 		endif;
 	}
@@ -163,30 +163,49 @@ class PHPwikiBot {
 		if (is_array($response)) {
 			$array = $response['query']['pages'];
 			//var_dump($array);
-			if (isset($array[-1])) {
-				if (isset($array[-1]['missing'])):
-					throw new GetPageFailure('Page doesn\'t exist!', 201);
-				elseif (isset($array[-1]['invalid'])):
+			foreach ($array as $v) {
+				if (isset($v['missing'])):
+					throw new GetPageFailure('Page doesn\'t exist', 201);
+				elseif (isset($v['invalid'])):
 					throw new GetPageFailure('Page title invaild', 202);
-				elseif (isset($array[-1]['special'])):
+				elseif (isset($v['special'])):
 					throw new GetPageFailure('Special Page', 203);
 				else:
-					throw new GetPageFailure('General Failure', 200);
+					if (is_string($v['revisions'][0]['*'])):
+						return $v['revisions'][0]['*'];
+					else:
+						throw new GetPageFailure('Can\'t Fetch Page', 200);
+					endif;
 				endif;
-			} else {
-				$array = array_shift($array);
-				//var_dump($array);
-				$pageid = $array['pageid'];
-				//var_dump($pageid);
-				return $response['query']['pages'][$pageid]['revisions'][0]['*'];
 			}
 		} else {
-			throw new GetPageFailure('General Failure', 200);
+			throw new GetPageFailure('Can\'t Fetch Page', 200);
 		}
 	}
 
 	/**
-	 * Perform a get request to the API
+	 * Get a page's category
+	 *
+	 * @param string $page The page name
+	 * @return array An array with all categories or false if no category
+	 *
+	 */
+	public function get_page_cat($page) {
+		$response = $this->getAPI('action=query&prop=categories&titles='.urlencode($page));
+		var_dump($response);
+		foreach ($response['query']['pages'] as $key => $value) {
+			var_dump($value);
+			if (!isset($value['categories'])) return false;
+			foreach ($value['categories'] as $key2 => $value2) {
+				$cats[] = $value2['title'];
+			}
+		}
+		var_dump($cats);
+		return $cats;
+	}
+	
+	/**
+	 * Perform a GET request to the API
 	 *
 	 * @param string $query The query string to pass the the API, without ?
 	 * @return mixed The unserialized data from the API
@@ -203,7 +222,7 @@ class PHPwikiBot {
 	}
 
 	/**
-	 * Perform a post request to the API
+	 * Perform a POST request to the API
 	 *
 	 * @param string $postdata The data to post in this format a=b&b=c
 	 * @return mixed The unserialized data from the API
