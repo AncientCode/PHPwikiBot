@@ -1,0 +1,64 @@
+"General"
+{
+"ProjectType" = "local"
+"AutoLoadTemplate" = "%s.php;class.%s.php;"
+}
+"Configurations"
+{
+    "Local|PHP 5"
+    {
+    "IncludeDirs" = ""
+    }
+    "Local|PHP 4"
+    {
+    "IncludeDirs" = ""
+    }
+    "Remote|PHP 5"
+    {
+    "IncludeDirs" = ""
+    }
+    "Remote|PHP 4"
+    {
+    "IncludeDirs" = ""
+    }
+}
+"Files"
+{
+    "encodepass.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "confgen.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "stddef.inc"
+    {
+    "ProjRelPath" = "T"
+    }
+    "bot.class.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "test.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "config.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "pass.bat"
+    {
+    "ProjRelPath" = "T"
+    }
+}
+"ProjStartupServices"
+{
+}
+"Globals"
+{
+}
+"References"
+{
+}
