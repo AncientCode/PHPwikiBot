@@ -373,6 +373,9 @@ class PHPwikiBot {
 	 */
 	public function del_page($page, $reason = '') {
 		$response = $this->getAPI('action=query&prop=info&intoken=delete&titles=' . urlencode($page));
+		//var_dump($response);
+		if (isset($response['warnings']['info']['*']) && strstr($response['warnings']['info']['*'], 'not allowed'))
+			throw new DeleteFailure('Forbidden', 603);
 		foreach ($response['query']['pages'] as $v)
 			$token = $v['deletetoken'];
 		$query = 'action=delete&title='.urlencode($page).'&token='.urlencode($token).'&reason='.urlencode($reason);
@@ -399,6 +402,34 @@ class PHPwikiBot {
 		}
 		return true;
 	}
+	/*public function del_page($page, $reason = '') {
+		$response = $this->getAPI('action=query&prop=info&intoken=protect&titles=' . urlencode($page));
+		foreach ($response['query']['pages'] as $v)
+			$token = $v['deletetoken'];
+		$query = 'action=delete&title='.urlencode($page).'&token='.urlencode($token).'&reason='.urlencode($reason);
+		$response = $this->postAPI($query);
+		if (isset($response['error'])) {
+			switch ($response['error']['code']) {
+				case 'cantdelete':
+				case 'missingtitle':
+					throw new DeleteFailure('No Such Page', 601);
+					break;
+				case 'blocked':
+				case 'autoblocked': // 402 Blocked
+					throw new DeleteFailure('Blocked', 602);
+					break;
+				case 'permissiondenied':
+				case 'protectedtitle':
+				case 'protectedpage':
+				case 'protectednamespace': // 603 Forbidden
+					throw new DeleteFailure('Forbidden', 603);
+					break;
+				default:
+					throw new DeleteFailure('Delete Failure', 600);
+			}
+		}
+		return true;
+	}*
 	
 	/* Internal Methods */
 	/**
