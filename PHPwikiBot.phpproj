@@ -36,7 +36,19 @@
     {
     "ProjRelPath" = "T"
     }
+    "tutorial"
+    {
+    "ProjRelPath" = "T"
+    }
+    "tutorial\\gnlwikinfo.txt"
+    {
+    "ProjRelPath" = "T"
+    }
     "bot.class.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "README"
     {
     "ProjRelPath" = "T"
     }

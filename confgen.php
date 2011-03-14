@@ -5,11 +5,10 @@
  * @package PHPwikiBot
  * @name Configuration Generator
  */
-
 /**
  * Standard Definitions
  */
-require dirname(__FILE__).'/stddef.inc';
+require_once dirname(__FILE__).'/stddef.inc';
 // Date
 $date = date('Y-m-d h:m:s T');
 
