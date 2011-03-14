@@ -24,14 +24,9 @@ define('CLI', (PHP_SAPI == 'cli' || PHP_SAPI == 'embed'));
 /**
  * Defines the end of line
  * If it's command line or embed SAPI, we use the system's EOL
- * If it's web, i.e. othe web server SAPI, we use <br / > plus system's EOL
+ * If it's HTML, i.e. othe web server SAPI, we use <br / > plus system's EOL
  */
-if (CLI): 
-	define('EOL', PHP_EOL); // we should use the platform's line break for cli
-else:
-	/**@ignore*/
-	define('EOL', '<br />'.PHP_EOL);// but <br /> with a line break for web
-endif;
+define('EOL', CLI ? PHP_EOL : '<br />'.PHP_EOL);
 
 /** Windows Specific Functions */
 define('WIN32', (substr(PHP_OS, 0, 3) == 'WIN'));

@@ -91,5 +91,18 @@ class EditFailure extends BotException {}
  */
 class MoveFailure extends BotException {}
 
+/**
+ * The exception Delete Failure (6xx)
+ * 
+ * Error Codes:
+ * + 600 Delete Failure
+ * + 601 No Such Page
+ * + 602 Blocked
+ * + 603 Forbidden
+ *
+ * @package Exception
+ */
+class DeleteFailure extends BotException {}
+
 //class LoginFailure extends BotException {}*/
 

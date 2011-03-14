@@ -357,7 +357,44 @@ class PHPwikiBot {
 					break;
 				default:
 					throw new MoveFailure('Move Failure', 500);
+			endswitch;
+		}
+		return true;
+	}
+	
+	/**
+	 * Deletes a page
+	 *
+	 * @param string $page Page to delete
+	 * @param string $reason Reason of deleting
+	 * @return bool True when success
+	 * @throws DeleteFailure
+	 *
+	 */
+	public function del_page($page, $reason = '') {
+		$response = $this->getAPI('action=query&prop=info&intoken=delete&titles=' . urlencode($page));
+		foreach ($response['query']['pages'] as $v)
+			$token = $v['deletetoken'];
+		$query = 'action=delete&title='.urlencode($page).'&token='.urlencode($token).'&reason='.urlencode($reason);
+		$response = $this->postAPI($query);
+		if (isset($response['error'])) {
+			switch ($response['error']['code']):
+				case 'cantdelete':
+				case 'missingtitle':
+					throw new DeleteFailure('No Such Page', 601);
 					break;
+				case 'blocked':
+				case 'autoblocked': // 402 Blocked
+					throw new DeleteFailure('Blocked', 602);
+					break;
+				case 'permissiondenied':
+				case 'protectedtitle':
+				case 'protectedpage':
+				case 'protectednamespace': // 603 Forbidden
+					throw new DeleteFailure('Forbidden', 603);
+					break;
+				default:
+					throw new DeleteFailure('Delete Failure', 600);
 			endswitch;
 		}
 		return true;
@@ -447,7 +484,6 @@ class PHPwikiBot {
 					break;
 				default:
 					throw new EditFailure('Edit Failure', 400);
-					break;
 			endswitch;
 		} else {
 			$this->log('[' . $response['edit']['result'] . '] ' . $response['error']['info'], LG_ERROR);
