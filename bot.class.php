@@ -221,6 +221,38 @@ class PHPwikiBot {
 		return $cats;
 	}
 	
+	
+	/**
+	 * Get all page in a category
+	 *
+	 * @param string $category Name of Category
+	 * @param int $limit Number of page to fetch before it stops
+	 * @param string $start Start from page name
+	 * @param string $ns Namespace, 'all' for all
+	 * @return array Array of page
+	 *
+	 */
+	public function category($category, $limit = 500, $start = '', $ns = 'all') {
+		$query = 'action=query&list=categorymembers&cmtitle=' . urlencode('Category:' . $category) . '&cmlimit=' . $limit;
+		if ($ns != 'all')
+			$query .= '&cmnamespace=' . $ns;
+		if ($start != '')
+			$query .= '&cmcontinue=' . urlencode($start);
+		$result = $this->getAPI($query);
+		$cm = $result['query']['categorymembers'];
+		$pages = array();
+		$j = count($cm);
+		for ($i = 0; $i < $j; ++$i)
+			$pages[] = $cm[$i]['title'];
+		if (isset($result['query-continue']['categorymembers']['cmcontinue'])) {
+			$next = $result['query-continue']['categorymembers']['cmcontinue'];
+			if ($next != '') {
+				array_push($pages, $next);
+			}
+		}
+		return $pages;
+	}
+	
 	/**
 	 * Creates a page
 	 *
@@ -312,14 +344,16 @@ class PHPwikiBot {
 		$summary = urlencode($summary);
 		//$md5 = md5($newtext);
 		
-		if ($newtext == $oldtext) 
+		if ($newtext == $oldtext) {
 			//the new content is the same, nothing changes
+			$this->log('401 Same Content, can\'t update!!!', LG_ERROR);
 			throw new EditFailure('Same Content', 401);
-		
-		if ($newtext == '' && !$force) 
+		}
+		if ($newtext == '' && !$force) {
 			//the new content is void, nothing changes
+			$this->log('402 Blank Content, use $force!!!', LG_ERROR);
 			throw new EditFailure('Blank Content', 402);
-		
+		}
 		$post = "title=$name&action=edit&basetimestamp=$ts&starttimestamp=$sts&token=$token&summary=$summary$extra&text=$newtext";
 		if ($bot) {
 			if (!$this->allowBots($rawoldtext)) throw new EditFailure('Forbidden', 403);

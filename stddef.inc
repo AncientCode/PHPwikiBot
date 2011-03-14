@@ -33,6 +33,9 @@ else:
 	define('EOL', '<br />'.PHP_EOL);// but <br /> with a line break for web
 endif;
 
+/** Windows Specific Functions */
+define('WIN32', (substr(PHP_OS, 0, 3) == 'WIN'));
+
 /* Error levels */
 /**Debug level*/
 define('LG_DEBUG', 0);
