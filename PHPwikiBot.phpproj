@@ -24,22 +24,6 @@
 }
 "Files"
 {
-    "encodepass.php"
-    {
-    "ProjRelPath" = "T"
-    }
-    "test.php"
-    {
-    "ProjRelPath" = "T"
-    }
-    "exception.inc"
-    {
-    "ProjRelPath" = "T"
-    }
-    "tutorial"
-    {
-    "ProjRelPath" = "T"
-    }
     "tutorial\\gnlwikinfo.txt"
     {
     "ProjRelPath" = "T"
@@ -48,7 +32,7 @@
     {
     "ProjRelPath" = "T"
     }
-    "README"
+    "stddef.inc"
     {
     "ProjRelPath" = "T"
     }
@@ -56,7 +40,15 @@
     {
     "ProjRelPath" = "T"
     }
+    "test.php"
+    {
+    "ProjRelPath" = "T"
+    }
     "confgen.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "README"
     {
     "ProjRelPath" = "T"
     }
@@ -64,7 +56,15 @@
     {
     "ProjRelPath" = "T"
     }
-    "stddef.inc"
+    "encodepass.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "exception.inc"
+    {
+    "ProjRelPath" = "T"
+    }
+    "tutorial"
     {
     "ProjRelPath" = "T"
     }

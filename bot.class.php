@@ -244,6 +244,33 @@ class PHPwikiBot {
 		} catch (EditFailure $e) {
 			throw $e;
 		}
+		$this->editdetails = null;
+	}
+	
+	/**
+	 * Modifies a page
+	 *
+	 * @param string $page Page title
+	 * @param string $text New Text
+	 * @param string $summary Edit Summary
+	 * @param bool $minor Minor Edit
+	 * @param bool $force Force Edit
+	 * @return bool Return true on success
+	 * @throws EditFailure
+	 */
+	public function edit_page($page, $text, $summary, $minor = false, $force = false) {
+		$response = $this->getAPI('action=query&prop=info|revisions&intoken=edit&titles=' . urlencode($page));
+		$this->editdetails = $response['query']['pages'];
+		if (isset($this->editdetails[-1])) throw new EditFailure('Page Doesn\'t Exist', 421);
+		$bot = false;
+		if (isset($this->conf['bot']) && $this->conf['bot'] == true) $bot = true;
+		try {
+			$this->put_page($page, $text, $summary, $minor, $bot);
+			return true;
+		} catch (EditFailure $e) {
+			throw $e;
+		}
+		$this->editdetails = null;
 	}
 	
 	/* Internal Methods */
@@ -311,10 +338,10 @@ class PHPwikiBot {
 		/*Being worked on to throw the right exception*/
 		} elseif (isset($response['error'])) {
 			$this->log('[' . $response['error']['code'] . '] ' . $response['error']['info'], LG_ERROR);
-			return false;
+			throw EditFailure('Edit Failure', 400);
 		} else {
 			echo "Error - " . $response["edit"]["result"] . "&nbsp;<br />\n";
-			return false;
+			throw EditFailure('Edit Failure', 400);
 		}
 	}
 	
@@ -444,7 +471,7 @@ class PHPwikiBot {
 			$msg = date('Y-m-d H:i:s').' - '.$this->loglevelname[$level].': '.$msg;
 			if ( $this->output_log ) {
 				if(CLI && LOG_TO_STDERR) {
-					if ($level < LG_WARN)
+					if ($level < LG_WARN && !WIN32)
 						fwrite(STDERR, "\033[31m$msg\033[0m".EOL);
 					else
 						fwrite(STDERR, $msg.EOL);

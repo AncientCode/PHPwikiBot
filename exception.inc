@@ -67,6 +67,7 @@ class InfoFailure extends BotException {}
  * + 402 Blank Content
  * + 403 Forbidden
  * + 420 Page Exists
+ * + 421 Page Doesn't Exist
  *
  * @package Exception
  */
