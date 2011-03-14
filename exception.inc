@@ -44,5 +44,16 @@ class LoginFailure extends BotException {}
  * @package Exception
  */
 class GetPageFailure extends BotException {}
+
+/**
+ * The exception Get Information Failure (3xx)
+ * 
+ * Error Codes:
+ * 300 Can't Get Info;
+ * 301 Not in Gereral Info
+ *
+ */
+class InfoFailure extends BotException {}
+
 //class LoginFailure extends BotException {}*/
 

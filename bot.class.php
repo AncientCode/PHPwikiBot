@@ -95,7 +95,6 @@ class PHPwikiBot {
 		$this->logout();
 	}
 	
-	
 	/**
 	 * The login method, used to logon to MediaWiki's API
 	 *
@@ -137,7 +136,6 @@ class PHPwikiBot {
 		endif;
 	}
 	
-	
 	/**
 	 * Logout method, clear all cookies
 	 *
@@ -148,6 +146,19 @@ class PHPwikiBot {
 		$this->postAPI('action=logout');
 	}
 	
+	public function wiki_info ($type = '') {
+		$response = $this->getAPI('action=query&meta=siteinfo');
+		if (!is_array($response)) throw new InfoFailure ('Can\'t Get Info', 300);
+		if ($type):
+			if (isset($response['query']['general'][$type])):
+				return $response['query']['general'][$type];
+			else:
+				throw new InfoFailure ('Not in Gereral Info', 301);
+			endif;
+		else:
+			return $response['query']['general'];
+		endif;
+	}
 	
 	/**
 	 * Fetch a page from the wiki

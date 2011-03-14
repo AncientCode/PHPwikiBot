@@ -2,5 +2,6 @@
 *.puo
 *.suo
 /config.php
-*.txt
 /test.php
+/cookie.txt
+/test.txt
