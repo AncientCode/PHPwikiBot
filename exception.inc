@@ -66,11 +66,30 @@ class InfoFailure extends BotException {}
  * + 401 Same Content
  * + 402 Blank Content
  * + 403 Forbidden
+ * + 404 Blocked
+ * + 405 Protected
  * + 420 Page Exists
  * + 421 Page Doesn't Exist
  *
  * @package Exception
  */
 class EditFailure extends BotException {}
+
+/**
+ * The exception Move Failure (5xx)
+ * 
+ * Error Codes:
+ * + 500 Move Failure
+ * + 501 Destination Exists
+ * + 502 Protected
+ * + 503 Forbidden
+ * + 504 Extension Mismatch
+ * + 505 Wrong Namespace
+ * + 506 Self Move
+ *
+ * @package Exception
+ */
+class MoveFailure extends BotException {}
+
 //class LoginFailure extends BotException {}*/
 

@@ -305,6 +305,64 @@ class PHPwikiBot {
 		$this->editdetails = null;
 	}
 	
+	/**
+	 * Move a page
+	 *
+	 * @param string $from The source page
+	 * @param string $to The destination
+	 * @param string $reason Reason for moving
+	 * @param bool $talk Move talk page
+	 * @param bool $sub Move subpages
+	 * @param bool $redirect Create a redirect form $from to $to
+	 * @return bool Return ture on sucess
+	 * @throws MoveFailure
+	 */
+	public function move_page($from, $to, $reason = '', $talk = true, $sub = true, $redirect = true) {
+		$response = $this->getAPI('action=query&prop=info&intoken=move&titles=' . urlencode($from));
+		//var_dump($response);
+		foreach ($response['query']['pages'] as $v)
+			$token = $v['movetoken'];
+		$query = 'action=move&from='.urlencode($from).'&to='.urlencode($to).'&token='.urlencode($token).'&reason='.urlencode($reason);
+		if (!$redirect)
+			$query .= '&noredirect';
+		if ($talk)
+			$query .= '&movetalk';
+		if ($sub)
+			$query .= '&movesubpages';
+		$response = $this->postAPI($query);
+		//var_dump($response);
+		if (isset($response['error'])) {
+			switch ($response['error']['code']):
+				case 'articleexists': // 501 Destination Exists
+					throw new MoveFailure('Destination Exists', 501);
+					break;
+				case 'protectedpage':
+				case 'protectedtitle':
+				case 'immobilenamespace': // 502 Protected
+					throw new MoveFailure('Protected', 502);
+					break;
+				case 'cantmove':
+				case 'cantmovefile':
+				case 'cantmove-anon': // 503 Forbidden
+					throw new MoveFailure('Forbidden', 503);
+					break;
+				case 'filetypemismatch': // 504 Extension Mismatch
+					throw new MoveFailure('Extension Mismatch', 504);
+					break;
+				case 'nonfilenamespace': // 504 Wrong Namespace
+					throw new MoveFailure('Wrong Namespace', 505);
+					break;
+				case 'selfmove': // 504 Extension Mismatch
+					throw new MoveFailure('Self Move', 506);
+					break;
+				default:
+					throw new MoveFailure('Move Failure', 500);
+					break;
+			endswitch;
+		}
+		return true;
+	}
+	
 	/* Internal Methods */
 	/**
 	 * Change a page's content
@@ -321,14 +379,14 @@ class PHPwikiBot {
 	 */
 	protected function put_page($name, $newtext, $summary, $minor = false, $bot = true, $force = false) {
 		foreach ($this->editdetails as $key => $value) {
-			$token = urlencode($value["edittoken"]);
-			$sts = $value["starttimestamp"];
+			$token = urlencode($value['edittoken']);
+			$sts = $value['starttimestamp'];
 			if (isset($this->editdetails[-1])) {
 				$ts = $sts;
-				$extra = "&createonly=yes";
+				$extra = '&createonly=yes';
 			} else {
-				$ts = $value["revisions"][0]["timestamp"];
-				$extra = "&nocreate=yes";
+				$ts = $value['revisions'][0]['timestamp'];
+				$extra = '&nocreate=yes';
 			}
 		}
 		$newtext = urlencode($newtext);
@@ -372,9 +430,27 @@ class PHPwikiBot {
 		/*Being worked on to throw the right exception*/
 		} elseif (isset($response['error'])) {
 			$this->log('[' . $response['error']['code'] . '] ' . $response['error']['info'], LG_ERROR);
-			throw EditFailure('Edit Failure', 400);
+			switch ($response['error']['code']):
+				case 'cantcreate':
+				case 'permissiondenied':
+				case 'noedit': // 403 Forbidden
+					throw new EditFailure('Forbidden', 403);
+					break;
+				case 'blocked':
+				case 'autoblocked': // 404 Blocked
+					throw new EditFailure('Blocked', 404);
+					break;
+				case 'protectedtitle':
+				case 'protectedpage':
+				case 'protectednamespace':
+					throw new EditFailure('Protected', 405);
+					break;
+				default:
+					throw new EditFailure('Edit Failure', 400);
+					break;
+			endswitch;
 		} else {
-			echo "Error - " . $response["edit"]["result"] . "&nbsp;<br />\n";
+			$this->log('[' . $response['edit']['result'] . '] ' . $response['error']['info'], LG_ERROR);
 			throw EditFailure('Edit Failure', 400);
 		}
 	}
