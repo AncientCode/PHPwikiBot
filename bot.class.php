@@ -80,27 +80,28 @@ class PHPwikiBot {
 	 *
 	 */
 	public function __construct($user, $slient = false) {
+		/** Configuration Mapping */
 		$this->conf = $GLOBALS['users'][$user]; // Map the user configuration array
 		$this->useragent = $GLOBALS['useragent']; // Define the user-agent
-		$this->user = $user; // Username
 		$this->wikid = $this->conf['wiki']; // Wiki ID
 		$this->wikiname = $GLOBALS['wiki'][$this->wikid]['name'];// Wiki's name
 		$this->api_url = $GLOBALS['wiki'][$this->wikid]['api'];// Path to API
-		if ($slient) $this->out = false; // Not yet used
-		$this->conninit(); // Initialize cURL handles
-		$this->loglevel = $GLOBALS['log_level']; // Loglevel
-		$this->logh = fopen($GLOBALS['logfile'], 'a');// Open Logfile
-		$this->output_log = $GLOBALS['output_log']; // Whether to output logs to stdout/stderr
 		$this->epm = 60 / $GLOBALS['wiki'][$this->wikid]['epm']; // Edit per minute
+		$this->user = $this->conf['name']; // Username
 		/**
 		 * If the server supports OpenSSL, use encrypted password or else use plain text
 		 */
 		if (function_exists('openssl_decrypt'))
-			$pass = openssl_decrypt($this->conf['password'], 'AES-128-ECB', $GLOBALS['key']);
+			$pass = openssl_decrypt($this->conf['password'], 'AES-128-ECB', $GLOBALS['key']); // Password
 		else
-			$pass = $this->conf['password'];
-		//var_dump($this->conf, $this->useragent, $this->user, $this->wikid, $this->wikiname, $this->api_url, $pass);
-		//echo constant('EOL');
+			$pass = $this->conf['password']; // Password
+		if ($slient) $this->out = false; // Not yet used
+		/** Log */
+		$this->loglevel = $GLOBALS['log_level']; // Loglevel
+		$this->logh = fopen($GLOBALS['logfile'], 'a');// Open Logfile
+		$this->output_log = $GLOBALS['output_log']; // Whether to output logs to stdout/stderr
+		/** Initialize */
+		$this->conninit(); // Initialize cURL handles
 		try {
 			$this->login($user, $pass);
 		} catch (LoginFailure $e) {
@@ -116,8 +117,28 @@ class PHPwikiBot {
 		fclose($this->logh);
 	}
 	
+	/**
+	 * Convert the object to string
+	 *
+	 * @return string Basic info about this object
+	 *
+	 */
 	function __toString() {
-		
+		$name = $this->user;
+		$wikid = $this->wikid;
+		$wikiname = $this->wikiname;
+		$useragent = $this->useragent;
+		$api = $this->api_url;
+		if (function_exists('openssl_decrypt')) $crypt = 'yes';
+		else $crypt = 'no';
+		echo <<<EOD
+Username: $name
+Encrypted Password: $crypt
+Wiki ID: $wikid
+Wiki Name: $wikiname
+User Agent: $useragent
+
+EOD;
 	}
 	
 	

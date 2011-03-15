@@ -20,8 +20,11 @@ if (!isset ($cfg['output_log']) || !is_bool($cfg['output_log'])) echo '\'output_
 if (!isset ($cfg['log2stderr']) || !is_bool($cfg['log2stderr'])) echo '\'log2stderr\' MUST be yes or no!!!'.PHP_EOL;
 
 /** Set the variables */
+/** User-Agent of the bot */
 $useragent = $cfg['useragent'];
+/** Password encryption key */
 $key = $cfg['key'];
+/** Log level handling */
 switch ($cfg['log_level']) {
 	case 'LG_DEBUG':
 		$log_level = LG_DEBUG;
@@ -53,9 +56,15 @@ Error level MUST be one of the following:
 
 EOD;
 }
+/** Log file */
 $logfile = $cfg['logfile'];
+/** Whether to output the log */
 $output_log = $cfg['output_log'];
+/** Log to STDERR??? */
 define('LOG_TO_STDERR', $cfg['log2stderr']);
+/** Wiki Configuration */
 $wiki = $cfg['wiki'];
+/** User Configuration */
 $users = $cfg['users'];
+/** Clean up */
 $cfg = null;

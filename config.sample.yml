@@ -29,15 +29,19 @@ wiki:
       api: http://en.wikipedia.org/w/api.php
       epm: 5
 users:
-   user:
-   # encrypt using OpenSSL, Key=*key at the top*, method=AES-128-ECB
+   # a ID, can be anything as long as it's called in the constructor
+   user@wpen:
+      # Username
+      name: user
+      # encrypt using OpenSSL, Key=*key at the top*, method=AES-128-ECB
       password: bOFrgK4vlD5MbsOqUH8EwA==
-   # wiki that the user belongs to
+      # wiki that the user belongs to
       wiki: wpen
-   # is the user a bot???
+      # is the user a bot???
       bot: no
 
-   bot:
+   bot@wpen:
+      name: bot
       password: bOFrgK4vlD5MbsOqUH8EwA==
       wiki: wpen
       bot: yes
