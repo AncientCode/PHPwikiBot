@@ -28,6 +28,10 @@
     {
     "ProjRelPath" = "T"
     }
+    "spyc.php"
+    {
+    "ProjRelPath" = "T"
+    }
     "bot.class.php"
     {
     "ProjRelPath" = "T"
@@ -41,6 +45,10 @@
     "ProjRelPath" = "T"
     }
     "test.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "cfgparse.php"
     {
     "ProjRelPath" = "T"
     }

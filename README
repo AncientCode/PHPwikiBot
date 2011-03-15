@@ -5,3 +5,4 @@ Some Features are:
 * Pywikipedia Bot style bot with many utilities
 * Single cURL Handle for the entire object instead of opening one per request
 * Exception based rather than return value
+* YAML-based configuration, done using spyc

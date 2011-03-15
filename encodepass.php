@@ -8,16 +8,7 @@
  */
 
 /** Get the configuration File */
-if (is_readable(dirname(__FILE__).'/config.php')):
-	require dirname(__FILE__).'/config.php';
-else:
-	echo <<<'END'
-Can't find a configureation file, type in your own key
-Key: 
-END;
-	$key = trim(fgets(STDIN));
-endif;
-if (!isset($key)) die('Please set $key in config.php');
+require dirname(__FILE__).'/cfgparse.php';
 
 /**
  * Asking user for a password without displaying it

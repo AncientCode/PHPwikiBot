@@ -86,6 +86,7 @@ class EditFailure extends BotException {}
  * + 504 Extension Mismatch
  * + 505 Wrong Namespace
  * + 506 Self Move
+ * + 507 Invaild Title
  *
  * @package Exception
  */
@@ -99,10 +100,28 @@ class MoveFailure extends BotException {}
  * + 601 No Such Page
  * + 602 Blocked
  * + 603 Forbidden
+ * + 604 Invaild Title
  *
  * @package Exception
  */
 class DeleteFailure extends BotException {}
+
+/**
+ * The exception Protect Failure (7xx)
+ * 
+ * Error Codes:
+ * + 700 Protect Failure
+ * + 701 No Such Page
+ * + 702 Blocked
+ * + 703 Forbidden
+ * + 704 Invaild Title
+ * + 705 Invaild Expiry
+ * + 706 Past Expiry
+ * + 707 Invaild Level
+ *
+ * @package Exception
+ */
+class ProtectFailure extends BotException {}
 
 //class LoginFailure extends BotException {}*/
 

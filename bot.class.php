@@ -10,7 +10,7 @@
  * Include some definition and configuration
  */
 require_once dirname(__FILE__).'/stddef.inc';
-require_once INC.'config.php';
+require_once INC.'cfgparse.php';
 require_once INC.'exception.inc';
 
 
@@ -320,8 +320,10 @@ class PHPwikiBot {
 	public function move_page($from, $to, $reason = '', $talk = true, $sub = true, $redirect = true) {
 		$response = $this->getAPI('action=query&prop=info&intoken=move&titles=' . urlencode($from));
 		//var_dump($response);
-		foreach ($response['query']['pages'] as $v)
+		foreach ($response['query']['pages'] as $v) {
+			if (isset($v['invalid'])) throw new ProtectFailure('Invalid Title', 507);
 			$token = $v['movetoken'];
+		}
 		$query = 'action=move&from='.urlencode($from).'&to='.urlencode($to).'&token='.urlencode($token).'&reason='.urlencode($reason);
 		if (!$redirect)
 			$query .= '&noredirect';
@@ -376,8 +378,10 @@ class PHPwikiBot {
 		//var_dump($response);
 		if (isset($response['warnings']['info']['*']) && strstr($response['warnings']['info']['*'], 'not allowed'))
 			throw new DeleteFailure('Forbidden', 603);
-		foreach ($response['query']['pages'] as $v)
+		foreach ($response['query']['pages'] as $v) {
+			if (isset($v['invalid'])) throw new ProtectFailure('Invalid Title', 604);
 			$token = $v['deletetoken'];
+		}
 		$query = 'action=delete&title='.urlencode($page).'&token='.urlencode($token).'&reason='.urlencode($reason);
 		$response = $this->postAPI($query);
 		if (isset($response['error'])) {
@@ -402,34 +406,53 @@ class PHPwikiBot {
 		}
 		return true;
 	}
-	/*public function del_page($page, $reason = '') {
+	
+	public function protect_page($page, $edit, $move, $reason = '', $editexp = 'never', $movexp = 'never', $cascade = false) {
 		$response = $this->getAPI('action=query&prop=info&intoken=protect&titles=' . urlencode($page));
-		foreach ($response['query']['pages'] as $v)
-			$token = $v['deletetoken'];
-		$query = 'action=delete&title='.urlencode($page).'&token='.urlencode($token).'&reason='.urlencode($reason);
+		//var_dump($response);
+		if (isset($response['warnings']['info']['*']) && strstr($response['warnings']['info']['*'], 'not allowed'))
+			throw new ProtectFailure('Forbidden', 703);
+		foreach ($response['query']['pages'] as $v) {
+			if (isset($v['invalid'])) throw new ProtectFailure('Invalid Title', 704);
+			$token = $v['protecttoken'];
+		}
+		$query = 'action=protect&title='.urlencode($page).'&token='.urlencode($token);
+		if ($reason)
+			$query .= '&reason='.urlencode($reason);
+		$query .= '&protections=edit='.$edit.'|move='.$move;
+		$query .= '&expiry='.$editexp.'|'.$movexp;
+		if ($cascade) $query .= '&cascade';
 		$response = $this->postAPI($query);
+		//var_dump($response);
 		if (isset($response['error'])) {
 			switch ($response['error']['code']) {
-				case 'cantdelete':
-				case 'missingtitle':
-					throw new DeleteFailure('No Such Page', 601);
+				case 'missingtitle-createonly':
+					throw new ProtectFailure('No Such Page', 701);
 					break;
 				case 'blocked':
-				case 'autoblocked': // 402 Blocked
-					throw new DeleteFailure('Blocked', 602);
+				case 'autoblocked': // 702 Blocked
+					throw new ProtectFailure('Blocked', 702);
 					break;
+				case 'cantedit':
 				case 'permissiondenied':
-				case 'protectedtitle':
-				case 'protectedpage':
-				case 'protectednamespace': // 603 Forbidden
-					throw new DeleteFailure('Forbidden', 603);
+				case 'protectednamespace': // 703 Forbidden
+					throw new ProtectFailure('Forbidden', 703);
+					break;
+				case 'invalidexpiry': // 705 Invaild Expiry
+					throw new ProtectFailure('Invaild Expiry', 705);
+					break;
+				case 'pastexpiry': // 706 Past Expiry
+					throw new DeleteFailure('Past Expiry', 706);
+					break;
+				case 'protect-invalidlevel': // 707 Invaild Level
+					throw new DeleteFailure('Invaild Level', 707);
 					break;
 				default:
-					throw new DeleteFailure('Delete Failure', 600);
+					throw new DeleteFailure('Protect Failure', 600);
 			}
 		}
 		return true;
-	}*
+	}
 	
 	/* Internal Methods */
 	/**
