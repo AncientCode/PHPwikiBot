@@ -36,6 +36,14 @@
     {
     "ProjRelPath" = "T"
     }
+    "config.yml"
+    {
+    "ProjRelPath" = "T"
+    }
+    "config.sample.yml"
+    {
+    "ProjRelPath" = "T"
+    }
     "stddef.inc"
     {
     "ProjRelPath" = "T"

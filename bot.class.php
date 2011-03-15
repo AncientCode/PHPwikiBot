@@ -428,6 +428,19 @@ EOD;
 		return true;
 	}
 	
+	/**
+	 * Protects a page
+	 *
+	 * @param string $page Page title to protect
+	 * @param string $edit all=everyone autoconfirmed=Autoconfirmed Users sysop=Administrators
+	 * @param string $move all=everyone autoconfirmed=Autoconfirmed Users sysop=Administrators
+	 * @param string $reason Reason of protection
+	 * @param string $editexp Edit protecting expiry in format yyyymmddhhmmss
+	 * @param string $movexp Move protecting expiry in format yyyymmddhhmmss
+	 * @param bool $cascade Whether to enable cascade protection, i.e. protect all transcluded tamplates
+	 * @return bool Return true on success
+	 * @throws ProtectFailure
+	 */
 	public function protect_page($page, $edit, $move, $reason = '', $editexp = 'never', $movexp = 'never', $cascade = false) {
 		$response = $this->getAPI('action=query&prop=info&intoken=protect&titles=' . urlencode($page));
 		//var_dump($response);
@@ -474,6 +487,63 @@ EOD;
 		}
 		return true;
 	}
+	
+	/**
+	 * Protects a non-exist page
+	 *
+	 * @param string $page Page title to protect
+	 * @param string $perm Permission:all=everyone autoconfirmed=Autoconfirmed Users sysop=Administrators
+	 * @param string $reason Reason of protection
+	 * @param string $exp Protecting expiry in format yyyymmddhhmmss
+	 * @return bool Return true on success
+	 * @throws ProtectFailure
+	 */
+	public function protect_title($page, $perm, $reason = '', $exp = 'never') {
+		$response = $this->getAPI('action=query&prop=info&intoken=protect&titles=' . urlencode($page));
+		var_dump($response);
+		if (isset($response['warnings']['info']['*']) && strstr($response['warnings']['info']['*'], 'not allowed'))
+			throw new ProtectFailure('Forbidden', 703);
+		foreach ($response['query']['pages'] as $v) {
+			if (isset($v['invalid'])) throw new ProtectFailure('Invalid Title', 704);
+			$token = $v['protecttoken'];
+		}
+		$query = 'action=protect&title='.urlencode($page).'&token='.urlencode($token);
+		if ($reason)
+			$query .= '&reason='.urlencode($reason);
+		$query .= '&protections=create='.$perm;
+		$query .= '&expiry='.$exp;
+		$response = $this->postAPI($query);
+		var_dump($response);
+		if (isset($response['error'])) {
+			switch ($response['error']['code']) {
+				case 'create-titleexists':
+					throw new ProtectFailure('Page Exists', 701);
+					break;
+				case 'blocked':
+				case 'autoblocked': // 702 Blocked
+					throw new ProtectFailure('Blocked', 702);
+					break;
+				case 'cantedit':
+				case 'permissiondenied':
+				case 'protectednamespace': // 703 Forbidden
+					throw new ProtectFailure('Forbidden', 703);
+					break;
+				case 'invalidexpiry': // 705 Invaild Expiry
+					throw new ProtectFailure('Invaild Expiry', 705);
+					break;
+				case 'pastexpiry': // 706 Past Expiry
+					throw new DeleteFailure('Past Expiry', 706);
+					break;
+				case 'protect-invalidlevel': // 707 Invaild Level
+					throw new DeleteFailure('Invaild Level', 707);
+					break;
+				default:
+					throw new DeleteFailure('Protect Failure', 600);
+			}
+		}
+		return true;
+	}
+	
 	
 	/* Internal Methods */
 	/**

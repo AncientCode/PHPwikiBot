@@ -118,6 +118,7 @@ class DeleteFailure extends BotException {}
  * + 705 Invaild Expiry
  * + 706 Past Expiry
  * + 707 Invaild Level
+ * + 708 Page Exists
  *
  * @package Exception
  */
