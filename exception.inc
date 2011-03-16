@@ -124,5 +124,19 @@ class DeleteFailure extends BotException {}
  */
 class ProtectFailure extends BotException {}
 
+/**
+ * The exception Upload Failure (8xx)
+ * 
+ * Error Codes:
+ * + 800 Upload Failure
+ * + 801 Can't Fetch File
+ * + 802 Can't Read File
+ * + 803 Forbidden
+ * + 804 Blocked
+ *
+ * @package Exception
+ */
+class UploadFailure extends BotException {}
+
 //class LoginFailure extends BotException {}*/
 

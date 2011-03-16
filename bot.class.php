@@ -544,6 +544,56 @@ EOD;
 		return true;
 	}
 	
+	function upload($src, $target, $comment = '', $text = '') {
+		$response = $this->getAPI('action=query&prop=info&intoken=edit&titles=xxxxxxxx');
+		//var_dump($response);
+		foreach ($response['query']['pages'] as $v)
+			$token = urlencode($v['edittoken']);
+		//echo $token.EOL;
+		if ($this->is_url($src)) {
+			$i = get_headers($src);
+			//var_dump($i);
+			if ($i[0]{9} != 2 and $i[0]{9} != 3) throw new UploadFailure('Can\'t Fetch File', 801);
+			$query = 'action=upload&url='.urlencode($src).'&token='.$token.'&filename='.urlencode($target);
+			if ($comment) $query .= '&comment='.urlencode($comment);
+			if ($text) $query .= '&text='.urlencode($text);
+			$response = $this->postAPI($query);
+			//var_dump($response);
+			if (isset($response['error'])) {
+				switch ($response['error']['code']) {
+					case 'empty-file':
+						throw new UploadFailure('Can\'t Fetch File', 801);
+						break;
+					case 'permissiondenied':
+						throw new UploadFailure('Forbidden', 803);
+					case 'blocked':
+					case 'autoblocked': // 702 Blocked
+						throw new UploadFailure('Blocked', 804);
+						break;
+					default:
+						throw new UploadFailure('Upload Failure', 800);
+				}
+			}
+			if ($response['upload']['result'] == 'Success'):
+				$j = $response['upload']['imageinfo'];
+				$i = array(
+						'timestamp'	=> $j['timestamp'],
+						'width'		=> $j['width'],
+						'height'	=> $j['height'],
+						'url'		=> $j['url'],
+						'page'		=> $j['descriptionurl'],
+						'mime'		=> $j['mime'],
+						);
+				//var_dump($i);
+				return $i;
+			endif;
+			throw new UploadFailure('Upload Failure', 800);
+		} else {
+			if (!is_readable($src))	throw new UploadFailure('Can\'t Read File', 802);
+			
+		}
+	}
+	
 	
 	/* Internal Methods */
 	/**
@@ -687,6 +737,8 @@ EOD;
 		$this->postAPI('action=logout');
 	}
 	
+	
+	
 	/**
 	 * Perform a GET request to the API
 	 *
@@ -781,5 +833,16 @@ EOD;
 		if (preg_match('/\{\{(nobots|bots\|allow=none|bots\|deny=all|bots\|optout=all|bots\|deny=.*?' . preg_quote($this->user, '/') . '.*?)\}\}/iS', $text))
 			return false;
 		return true;
+	}
+	
+	/**
+	 * Check if $url is a valid URL, doesn't check if it returns an error when requesting
+	 *
+	 * @param string $url URL to check
+	 * @return bool True if $url is really a URL or false when it's some what not using HTTP(S) or FTP
+	 *
+	 */
+	protected function is_url($url) {
+		return (bool)preg_match('/^(http|https|ftp):\/\/[A-Za-z0-9]+\.[A-Za-z0-9]+[\/=\?%\-&_~`@[\]\':+!]*([^<>\"])*$/', $url);
 	}
 }

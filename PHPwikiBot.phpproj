@@ -24,39 +24,11 @@
 }
 "Files"
 {
-    "tutorial\\gnlwikinfo.txt"
-    {
-    "ProjRelPath" = "T"
-    }
-    "spyc.php"
-    {
-    "ProjRelPath" = "T"
-    }
     "bot.class.php"
     {
     "ProjRelPath" = "T"
     }
-    "config.yml"
-    {
-    "ProjRelPath" = "T"
-    }
-    "config.sample.yml"
-    {
-    "ProjRelPath" = "T"
-    }
-    "stddef.inc"
-    {
-    "ProjRelPath" = "T"
-    }
-    "pass.bat"
-    {
-    "ProjRelPath" = "T"
-    }
-    "test.php"
-    {
-    "ProjRelPath" = "T"
-    }
-    "cfgparse.php"
+    "tutorial\\gnlwikinfo.txt"
     {
     "ProjRelPath" = "T"
     }
@@ -64,7 +36,11 @@
     {
     "ProjRelPath" = "T"
     }
-    "config.php"
+    "config.sample.yaml"
+    {
+    "ProjRelPath" = "T"
+    }
+    "tutorial"
     {
     "ProjRelPath" = "T"
     }
@@ -72,11 +48,35 @@
     {
     "ProjRelPath" = "T"
     }
+    "config.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "pass.bat"
+    {
+    "ProjRelPath" = "T"
+    }
     "exception.inc"
     {
     "ProjRelPath" = "T"
     }
-    "tutorial"
+    "config.yaml"
+    {
+    "ProjRelPath" = "T"
+    }
+    "stddef.inc"
+    {
+    "ProjRelPath" = "T"
+    }
+    "cfgparse.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "test.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "spyc.php"
     {
     "ProjRelPath" = "T"
     }
