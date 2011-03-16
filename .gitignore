@@ -8,3 +8,5 @@
 /doc
 *.log
 /spyc.yaml
+*.yaml
+/config.yml

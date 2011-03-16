@@ -548,13 +548,13 @@ EOD;
 		$response = $this->getAPI('action=query&prop=info&intoken=edit&titles=xxxxxxxx');
 		//var_dump($response);
 		foreach ($response['query']['pages'] as $v)
-			$token = urlencode($v['edittoken']);
+			$token = $v['edittoken'];
 		//echo $token.EOL;
 		if ($this->is_url($src)) {
 			$i = get_headers($src);
 			//var_dump($i);
 			if ($i[0]{9} != 2 and $i[0]{9} != 3) throw new UploadFailure('Can\'t Fetch File', 801);
-			$query = 'action=upload&url='.urlencode($src).'&token='.$token.'&filename='.urlencode($target);
+			$query = 'action=upload&url='.urlencode($src).'&token='.urlencode($token).'&filename='.urlencode($target);
 			if ($comment) $query .= '&comment='.urlencode($comment);
 			if ($text) $query .= '&text='.urlencode($text);
 			$response = $this->postAPI($query);
@@ -590,7 +590,60 @@ EOD;
 			throw new UploadFailure('Upload Failure', 800);
 		} else {
 			if (!is_readable($src))	throw new UploadFailure('Can\'t Read File', 802);
-			
+			$query = array(
+					'action'	=> 'upload',
+					'file'		=> "@$src",
+					'token'		=> $token,
+					'filename'	=> $target,
+					'format'	=> 'php'
+					);
+			//var_dump($query['file']);
+			if ($comment) $query['comment'] = $comment;
+			if ($text) $query['text'] = $text;
+			$ch = curl_init();
+			$cfg = array(
+					CURLOPT_RETURNTRANSFER => true,
+					CURLOPT_COOKIEJAR => 'cookie.txt',
+					CURLOPT_COOKIEFILE => 'cookie.txt',
+					CURLOPT_USERAGENT => $this->useragent,
+					CURLOPT_HEADER => false,
+					CURLOPT_URL => $this->api_url,
+					CURLOPT_POST => true,
+					CURLOPT_POSTFIELDS => $query,
+					CURLOPT_HTTPHEADER => array('Content-Type: multipart/form-data'),
+					);
+			curl_setopt_array($ch, $cfg);
+			$response = curl_exec($ch);
+			if (curl_errno($this->post)) var_dump(curl_error($ch));
+			curl_close($ch);
+			$response = unserialize($response);
+			//var_dump($response);
+			if (isset($response['error'])) {
+				switch ($response['error']['code']) {
+					case 'permissiondenied':
+						throw new UploadFailure('Forbidden', 803);
+					case 'blocked':
+					case 'autoblocked': // 702 Blocked
+						throw new UploadFailure('Blocked', 804);
+						break;
+					default:
+						throw new UploadFailure('Upload Failure', 800);
+				}
+			}
+			if ($response['upload']['result'] == 'Success'):
+				$j = $response['upload']['imageinfo'];
+				$i = array(
+						'timestamp'	=> $j['timestamp'],
+						'width'		=> $j['width'],
+						'height'	=> $j['height'],
+						'url'		=> $j['url'],
+						'page'		=> $j['descriptionurl'],
+						'mime'		=> $j['mime'],
+						'sha1'		=> $j['sha1'],
+						);
+				return $i;
+			endif;
+			throw new UploadFailure('Upload Failure', 800);
 		}
 	}
 	
@@ -771,6 +824,7 @@ EOD;
 		$response = curl_exec($this->post);
 		if (curl_errno($this->post)) return curl_error($this->post);
 		//echo $response, EOL;
+		//var_dump($response);
 		return unserialize($response);
 	}
 	
