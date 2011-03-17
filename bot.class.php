@@ -384,13 +384,19 @@ EOD;
 			if (isset($v['invalid'])) throw new ProtectFailure('Invalid Title', 507);
 			$token = $v['movetoken'];
 		}
-		$query = 'action=move&from='.urlencode($from).'&to='.urlencode($to).'&token='.urlencode($token).'&reason='.urlencode($reason);
+		$query = array(
+				'action'	=> 'move',
+				'from'		=> $from,
+				'to'		=> $to,
+				'token'		=> $token,
+				'reason'	=> $reason,
+				);
 		if (!$redirect)
-			$query .= '&noredirect';
+			$query['noredirect'] = '';
 		if ($talk)
-			$query .= '&movetalk';
+			$query['movetalk'] = '';
 		if ($sub)
-			$query .= '&movesubpages';
+			$query['movesubpages'] = '';
 		$response = $this->postAPI($query);
 		//var_dump($response);
 		if (isset($response['error'])) {
@@ -442,8 +448,12 @@ EOD;
 			if (isset($v['invalid'])) throw new ProtectFailure('Invalid Title', 604);
 			$token = $v['deletetoken'];
 		}
-		$query = 'action=delete&title='.urlencode($page).'&token='.urlencode($token).'&reason='.urlencode($reason);
-		$response = $this->postAPI($query);
+		$response = $this->postAPI(array(
+				'action'=> 'delete',
+				'title'	=> $page,
+				'token'	=> $token,
+				'reason'=> $reason,
+				));
 		if (isset($response['error'])) {
 			switch ($response['error']['code']):
 				case 'cantdelete':
@@ -465,6 +475,10 @@ EOD;
 			endswitch;
 		}
 		return true;
+	}
+	
+	function undel_page($page, $reason) {
+		
 	}
 	
 	/**
@@ -489,12 +503,15 @@ EOD;
 			if (isset($v['invalid'])) throw new ProtectFailure('Invalid Title', 704);
 			$token = $v['protecttoken'];
 		}
-		$query = 'action=protect&title='.urlencode($page).'&token='.urlencode($token);
-		if ($reason)
-			$query .= '&reason='.urlencode($reason);
-		$query .= '&protections=edit='.$edit.'|move='.$move;
-		$query .= '&expiry='.$editexp.'|'.$movexp;
-		if ($cascade) $query .= '&cascade';
+		$query = array(
+				'action'=> 'protect',
+				'title'	=> $page,
+				'token'	=> $token
+				);
+		if ($reason) $query['reason'] = $reason;
+		$query['protections'] = 'edit='.$edit.'|move='.$move;
+		$query['expiry'] = $editexp.'|'.$movexp;
+		if ($cascade) $query['cascade'] = '';
 		$response = $this->postAPI($query);
 		//var_dump($response);
 		if (isset($response['error'])) {
@@ -539,20 +556,24 @@ EOD;
 	 */
 	public function protect_title($page, $perm, $reason = '', $exp = 'never') {
 		$response = $this->getAPI('action=query&prop=info&intoken=protect&titles=' . urlencode($page));
-		var_dump($response);
+		//var_dump($response);
 		if (isset($response['warnings']['info']['*']) && strstr($response['warnings']['info']['*'], 'not allowed'))
 			throw new ProtectFailure('Forbidden', 703);
 		foreach ($response['query']['pages'] as $v) {
 			if (isset($v['invalid'])) throw new ProtectFailure('Invalid Title', 704);
 			$token = $v['protecttoken'];
 		}
-		$query = 'action=protect&title='.urlencode($page).'&token='.urlencode($token);
+		$query = array(
+			'action'=> 'protect',
+			'title'	=> $page,
+			'token'	=>$token,
+			);
 		if ($reason)
-			$query .= '&reason='.urlencode($reason);
-		$query .= '&protections=create='.$perm;
-		$query .= '&expiry='.$exp;
+			$query['reason'] = $reason;
+		$query['protections'] = 'create='.$perm;
+		$query['expiry'] = $exp;
 		$response = $this->postAPI($query);
-		var_dump($response);
+		//var_dump($response);
 		if (isset($response['error'])) {
 			switch ($response['error']['code']) {
 				case 'create-titleexists':
@@ -603,40 +624,15 @@ EOD;
 			$i = get_headers($src);
 			//var_dump($i);
 			if ($i[0]{9} != 2 and $i[0]{9} != 3) throw new UploadFailure('Can\'t Fetch File', 801);
-			$query = 'action=upload&url='.urlencode($src).'&token='.urlencode($token).'&filename='.urlencode($target);
-			if ($comment) $query .= '&comment='.urlencode($comment);
-			if ($text) $query .= '&text='.urlencode($text);
+			$query = array(
+				'action'	=> 'upload',
+				'url'		=> $src,
+				'token'		=> $token,
+				'filename'	=> $target,
+				);
+			if ($comment) $query['comment'] = $comment;
+			if ($text) $query['text'] = $text;
 			$response = $this->postAPI($query);
-			//var_dump($response);
-			if (isset($response['error'])) {
-				switch ($response['error']['code']) {
-					case 'empty-file':
-						throw new UploadFailure('Can\'t Fetch File', 801);
-						break;
-					case 'permissiondenied':
-						throw new UploadFailure('Forbidden', 803);
-					case 'blocked':
-					case 'autoblocked': // 702 Blocked
-						throw new UploadFailure('Blocked', 804);
-						break;
-					default:
-						throw new UploadFailure('Upload Failure', 800);
-				}
-			}
-			if ($response['upload']['result'] == 'Success'):
-				$j = $response['upload']['imageinfo'];
-				$i = array(
-						'timestamp'	=> $j['timestamp'],
-						'width'		=> $j['width'],
-						'height'	=> $j['height'],
-						'url'		=> $j['url'],
-						'page'		=> $j['descriptionurl'],
-						'mime'		=> $j['mime'],
-						);
-				//var_dump($i);
-				return $i;
-			endif;
-			throw new UploadFailure('Upload Failure', 800);
 		} else {
 			if (!is_readable($src))	throw new UploadFailure('Can\'t Read File', 802);
 			$query = array(
@@ -644,56 +640,40 @@ EOD;
 					'file'		=> "@$src",
 					'token'		=> $token,
 					'filename'	=> $target,
-					'format'	=> 'php'
 					);
-			//var_dump($query['file']);
 			if ($comment) $query['comment'] = $comment;
 			if ($text) $query['text'] = $text;
-			$ch = curl_init();
-			$cfg = array(
-					CURLOPT_RETURNTRANSFER => true,
-					CURLOPT_COOKIEJAR => 'cookie.txt',
-					CURLOPT_COOKIEFILE => 'cookie.txt',
-					CURLOPT_USERAGENT => $this->useragent,
-					CURLOPT_HEADER => false,
-					CURLOPT_URL => $this->api_url,
-					CURLOPT_POST => true,
-					CURLOPT_POSTFIELDS => $query,
-					CURLOPT_HTTPHEADER => array('Content-Type: multipart/form-data'),
-					);
-			curl_setopt_array($ch, $cfg);
-			$response = curl_exec($ch);
-			if (curl_errno($this->post)) var_dump(curl_error($ch));
-			curl_close($ch);
-			$response = unserialize($response);
-			//var_dump($response);
-			if (isset($response['error'])) {
-				switch ($response['error']['code']) {
-					case 'permissiondenied':
-						throw new UploadFailure('Forbidden', 803);
-					case 'blocked':
-					case 'autoblocked': // 702 Blocked
-						throw new UploadFailure('Blocked', 804);
-						break;
-					default:
-						throw new UploadFailure('Upload Failure', 800);
-				}
-			}
-			if ($response['upload']['result'] == 'Success'):
-				$j = $response['upload']['imageinfo'];
-				$i = array(
-						'timestamp'	=> $j['timestamp'],
-						'width'		=> $j['width'],
-						'height'	=> $j['height'],
-						'url'		=> $j['url'],
-						'page'		=> $j['descriptionurl'],
-						'mime'		=> $j['mime'],
-						'sha1'		=> $j['sha1'],
-						);
-				return $i;
-			endif;
-			throw new UploadFailure('Upload Failure', 800);
+			$response = $this->postAPI($query);
 		}
+		if (isset($response['error'])) {
+			switch ($response['error']['code']) {
+				case 'empty-file':
+					throw new UploadFailure('Can\'t Fetch File', 801);
+					break;
+				case 'permissiondenied':
+					throw new UploadFailure('Forbidden', 803);
+				case 'blocked':
+				case 'autoblocked': // 702 Blocked
+					throw new UploadFailure('Blocked', 804);
+					break;
+				default:
+					throw new UploadFailure('Upload Failure', 800);
+				}
+		}
+		if ($response['upload']['result'] == 'Success'):
+			$j = $response['upload']['imageinfo'];
+			$i = array(
+					'timestamp'	=> $j['timestamp'],
+					'width'		=> $j['width'],
+					'height'	=> $j['height'],
+					'url'		=> $j['url'],
+					'page'		=> $j['descriptionurl'],
+					'mime'		=> $j['mime'],
+					'sha1'		=> $j['sha1'],
+					);
+			return $i;
+		endif;
+		throw new UploadFailure('Upload Failure', 800);
 	}
 	
 	
@@ -713,49 +693,59 @@ EOD;
 	 */
 	protected function put_page($name, $newtext, $summary, $minor = false, $bot = true, $force = false) {
 		foreach ($this->editdetails as $key => $value) {
-			$token = urlencode($value['edittoken']);
+			$token = $value['edittoken'];
 			$sts = $value['starttimestamp'];
 			if (isset($this->editdetails[-1])) {
 				$ts = $sts;
-				$extra = '&createonly=yes';
+				//$extra = '&createonly=yes';
+				$create = true;
 			} else {
 				$ts = $value['revisions'][0]['timestamp'];
-				$extra = '&nocreate=yes';
+				$create = false;//'&nocreate=yes';
 			}
 		}
-		$newtext = urlencode($newtext);
 		try {
-			$rawoldtext = $this->get_page($name, true);
+			$oldtext = $this->get_page($name, true);
 		} catch (GetPageFailure $e) {
 			if ($e->getCode() == 201)
-				$rawoldtext = '';
+				$oldtext = '';
 			else
 				throw $e;
 		}
-		$oldtext = urlencode($rawoldtext);
-		$summary = urlencode($summary);
-		//$md5 = md5($newtext);
 		
 		if ($newtext == $oldtext) {
 			//the new content is the same, nothing changes
 			$this->log('401 Same Content, can\'t update!!!', LG_ERROR);
 			throw new EditFailure('Same Content', 401);
 		}
+		
 		if ($newtext == '' && !$force) {
 			//the new content is void, nothing changes
 			$this->log('402 Blank Content, use $force!!!', LG_ERROR);
 			throw new EditFailure('Blank Content', 402);
 		}
-		$post = "title=$name&action=edit&basetimestamp=$ts&starttimestamp=$sts&token=$token&summary=$summary$extra&text=$newtext";
+		$post = array(
+				'title'			=> $name,
+				'action'		=> 'edit',
+				'basetimestamp'	=> $ts,
+				'starttimestamp'=> $sts,
+				'token'			=> $token,
+				'summary'		=> $summary,
+				'md5'			=> md5($newtext),
+				'text'			=> $newtext,
+				);
 		if ($bot) {
-			if (!$this->allowBots($rawoldtext)) throw new EditFailure('Forbidden', 403);
-			$post .= '&bot=yes';
+			if (!$this->allowBots($oldtext)) throw new EditFailure('Forbidden', 403);
+			$post['bot'] = 'yes';
 		}
-		if ($minor)
-			$post .= '&minor=yes';
+		if ($create)
+			$post['createonly'] = 'yes';
 		else
-			$post .= '&notminor=yes';
-		
+			$post['nocreate'] = 'yes';
+		if ($minor)
+			$post['minor'] = 'yes';
+		else
+			$post['notminor'] = 'yes';
 		$response = $this->postAPI($post);
 		if (isset($response['edit']['result']) && $response['edit']['result'] == 'Success') {
 			$this->log('Successfully edited page ' . $response['edit']['title'], LG_INFO);
@@ -764,7 +754,7 @@ EOD;
 		/*Being worked on to throw the right exception*/
 		} elseif (isset($response['error'])) {
 			$this->log('[' . $response['error']['code'] . '] ' . $response['error']['info'], LG_ERROR);
-			switch ($response['error']['code']):
+			switch ($response['error']['code']) {
 				case 'cantcreate':
 				case 'permissiondenied':
 				case 'noedit': // 403 Forbidden
@@ -779,9 +769,11 @@ EOD;
 				case 'protectednamespace':
 					throw new EditFailure('Protected', 405);
 					break;
+				case 'badmd5':
+					throw new EditFailure('MD5 Failed', 406);
 				default:
 					throw new EditFailure('Edit Failure', 400);
-			endswitch;
+			}
 		} else {
 			$this->log('[' . $response['edit']['result'] . '] ' . $response['error']['info'], LG_ERROR);
 			throw EditFailure('Edit Failure', 400);
@@ -798,14 +790,22 @@ EOD;
 	*
 	*/
 	protected function login($user, $pass) {
-		$response = $this->postAPI('action=login&lgname=' . urlencode($user) . '&lgpassword=' . urlencode($pass));
+		$response = $this->postAPI(array(
+				'action' => 'login',
+				'lgname' => $user,
+				'lgpassword' => $pass,
+				));
 		//var_dump($response);
 		if ($response['login']['result'] == 'Success'):
 			echo 'Logged in!'.EOL; //Unpatched server, all done. (See bug #23076, April 2010.)
 		elseif ($response['login']['result'] == 'NeedToken'):
 			//Patched server, going fine
-			$token = $response['login']['token'];
-			$newresponse = $this->postAPI('action=login&lgname=' . urlencode($user) . '&lgpassword=' . urlencode($pass) . '&lgtoken=' . $token);
+			$newresponse = $this->postAPI(array(
+				'action' => 'login',
+				'lgname' => $user,
+				'lgpassword' => $pass,
+				'lgtoken' => $response['login']['token'],
+				));
 			//var_dump($newresponse);
 			if ($newresponse['login']['result'] == 'Success') :
 				echo 'Logged in!'.EOL; //All done
@@ -836,7 +836,7 @@ EOD;
 	 *
 	 */
 	protected function logout() {
-		$this->postAPI('action=logout');
+		$this->postAPI(array('action' => 'logout'));
 	}
 	
 	/**
@@ -850,27 +850,22 @@ EOD;
 		curl_setopt($this->get, CURLOPT_URL, $this->api_url.'?'.$query.'&maxlag='.$this->max_lag.'&format=php');
 		$response = curl_exec($this->get);
 		if (curl_errno($this->get)) return curl_error($this->get);
-		/*$fh = fopen('test.txt', 'a');
-		fwrite($fh, $response);
-		fclose($fh);*/
 		return unserialize($response);
 	}
 
 	/**
 	 * Perform a POST request to the API
 	 *
-	 * @param string $postdata The data to post in this format a=b&b=c
+	 * @param array $postdata The data to post in array 'option' => 'value'
 	 * @return mixed The unserialized data from the API
 	 *
 	 */
-	protected function postAPI($postdata = '') {
-		if ($postdata !== '') $postdata .= '&';
-		$postdata .= 'format=php';
-		//echo $postdata, EOL;
-		curl_setopt($this->post, CURLOPT_POSTFIELDS, $postdata);
+	protected function postAPI($post = '') {
+		$post['format'] = 'php';
+		//var_dump($postdata);
+		curl_setopt($this->post, CURLOPT_POSTFIELDS, $post);
 		$response = curl_exec($this->post);
 		if (curl_errno($this->post)) return curl_error($this->post);
-		//echo $response, EOL;
 		//var_dump($response);
 		return unserialize($response);
 	}
@@ -894,7 +889,7 @@ EOD;
 		$post = array(
 				CURLOPT_URL => $this->api_url,
 				CURLOPT_POST => true,
-				CURLOPT_HTTPHEADER => array('Content-Type: application/x-www-form-urlencoded;charset=UTF-8'),
+				CURLOPT_HTTPHEADER => array('Content-Type: multipart/form-data'),
 				);
 		curl_setopt_array($this->get, $cfg);
 		curl_setopt_array($this->post, $cfg);

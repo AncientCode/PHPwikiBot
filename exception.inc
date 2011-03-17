@@ -68,6 +68,7 @@ class InfoFailure extends BotException {}
  * + 403 Forbidden
  * + 404 Blocked
  * + 405 Protected
+ * + 406 MD5 Failed
  * + 420 Page Exists
  * + 421 Page Doesn't Exist
  *
