@@ -21,43 +21,74 @@ require_once INC.'exception.inc';
  */
 class PHPwikiBot {
 	/**
-	 * @var array Current User Config in the style of config.php
+	 * Current User Config in config.yml
+	 * @var array 
 	 */
 	protected $conf;
 	/**
-	 * @var string Username of the bot user on the wiki
+	 * Username of the bot user on the wiki
+	 * @var string 
 	 */
 	public $user;
 	/**
-	 * @var string Absolute path to API
+	 * Absolute path to API
+	 * @var string 
 	 */
 	public $api_url;
 	/**
-	 * @var string Bot's user-agent
+	 * Bot's user-agent
+	 * @var string 
 	 */
 	public $useragent;
 	/**
-	 * @var string a key in $wiki array
+	 * A key in $wiki array
+	 * @var string
 	 */
 	protected $wikid;
 	/**
-	 * @var string Wiki's full name or a friendly name
+	 * Wiki's full name or a friendly name
+	 * @var string
 	 */
 	public $wikiname;
 	/**
 	 * Replicate DB's slave some times have trouble syncing, set this to 5
-	 * @var int Fix slave DB's lag problem, set to 5
+	 * @var int
 	 */
 	public $max_lag = 5; // fix slave db's lag problem
 	/**
-	 * @var bool Whether to output some unimportant messages
+	 * Whether to output some unimportant messages
+	 * @var bool 
 	 */
 	protected $out = true;
+	/**
+	 * Frequency of edit
+	 * @var float
+	 */
 	public $epm;
+	/**
+	 * cURL POST handle
+	 * @var resource 
+	 */
 	protected $post;
+	/**
+	 * cURL GET handle
+	 * @var resource 
+	 */
 	protected $get;
+	/**
+	 * Log level
+	 * @var int 
+	 */
 	protected $loglevel = LOG_INFO;
+	/**
+	 * fopen() handle of the log file
+	 * @var resource 
+	 */
 	protected $logh;
+	/**
+	 * friendly name of log level
+	 * @var array
+	 */
 	protected $loglevelname = array(
 								LG_INFO => 'Info',
 								LG_DEBUG => 'Debug Info',
@@ -66,7 +97,15 @@ class PHPwikiBot {
 								LG_ERROR => 'Error',
 								LG_FATAL => 'Fatal Error',
 								);
+	/**
+	 * Whether to output the log to STDOUT/STDERR
+	 * @var array
+	 */
 	protected $output_log = true;
+	/**
+	 * Data to pass to put_page() from create_page() or edit_page()
+	 * @var array
+	 */
 	protected $editdetails;
 	
 	/* Magic Functions */
@@ -542,8 +581,18 @@ EOD;
 			}
 		}
 		return true;
-	}
+	}	
 	
+	/**
+	 * Upload a local file or a remote file using URL
+	 *
+	 * @param string $src Source, may be a local file or an URI with a warpper
+	 * @param string $target Target file name
+	 * @param string $comment Upload comment
+	 * @param string $text File page content
+	 * @return array an array with file data
+	 * @throws UploadFailure
+	 */
 	function upload($src, $target, $comment = '', $text = '') {
 		$response = $this->getAPI('action=query&prop=info&intoken=edit&titles=xxxxxxxx');
 		//var_dump($response);
@@ -790,8 +839,6 @@ EOD;
 		$this->postAPI('action=logout');
 	}
 	
-	
-	
 	/**
 	 * Perform a GET request to the API
 	 *
@@ -883,6 +930,14 @@ EOD;
 		}
 	}
 	
+	
+	/**
+	 * See if bots are allowed to edit the page
+	 *
+	 * @param string $text The content of the page
+	 * @return bool Returns true if the bot is allowed
+	 *
+	 */
 	protected function allowBots($text) {
 		if (preg_match('/\{\{(nobots|bots\|allow=none|bots\|deny=all|bots\|optout=all|bots\|deny=.*?' . preg_quote($this->user, '/') . '.*?)\}\}/iS', $text))
 			return false;
