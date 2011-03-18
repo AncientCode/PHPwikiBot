@@ -519,6 +519,81 @@ EOD;
 	}
 	
 	/**
+	 * Blocks a user
+	 *
+	 * @param string $name Username
+	 * @param string $reason Reason for blocking
+	 * @param string $exp A realtive(e.g. 2 days) or absolute(yyyymmddhhmmss)
+	 * @param bool $nocreate Block the IP from creating acounts
+	 * @param bool $auto Block the user's registration IP and any other IP the user tries to logon
+	 * @param bool $noemail Blocks the user's ability to send emails
+	 * @return bool True on success
+	 * @throws BlockFailure
+	 */
+	public function block ($name, $reason = '', $exp = 'never', $nocreate = false, $auto = false, $noemail = true) {
+		$resp = $this->postAPI('action=query&prop=info&intoken=block&titles=User:'.$name);
+		//var_dump($resp);
+		if (isset($resp['warnings']['info']['*']) && strstr($resp['warnings']['info']['*'], 'not allowed')) {
+			$this->log('Failed to block user '.$name.' with error 1003 Forbidden', LG_ERROR);
+			throw new BlockFailure('Forbidden', 1003);
+		}
+		foreach ($resp['query']['pages'] as $v)
+			$token = $v['blocktoken'];
+		//echo $token;
+		$query = 'action=block&user='.urlencode($name).'&expiry='.urlencode($exp).'&token='.urlencode($token);
+		if ($reason)
+			$query .= '&reason='.$reason;
+		else
+			$query .= '&reason='.urlencode('I Hate '.$name);
+		if ($auto)
+			$query .= '&autoblock';
+		if ($nocreate)
+			$query .= '&nocreate';
+		if ($noemail)
+			$query .= '&noemail';
+		$resp = $this->postAPI($query);
+		//var_dump($resp);
+		if (isset($response['error'])) {
+			switch ($response['error']['code']) {
+				case 'alreadyblocked':
+					$this->log('Failed to block user '.$name.' with error 1001 Already Blocked', LG_ERROR);
+					throw new BlockFailure('1001 Already Blocked', 1001);
+					break;
+				case 'blocked':
+				case 'autoblocked':
+					$this->log('Failed to block user '.$name.' with error 1002 Blocked', LG_ERROR);
+					throw new BlockFailure('Blocked', 1002);
+					break;
+				case 'permissiondenied':
+				case 'protectedtitle':
+				case 'protectedpage':
+				case 'protectednamespace':
+				case 'cantblock':
+				case 'cantblock-email':
+				case 'rangedisabled':
+					$this->log('Failed to block user '.$name.' with error 1003 Forbidden', LG_ERROR);
+					throw new BlockFailure('Forbidden', 1003);
+					break;
+				case 'invalidexpiry':
+				case 'pastexpiry':
+				case 'invalidrange':
+					$this->log('Failed to block user '.$name.' with error 1004 Invaild Expiry', LG_ERROR);
+					throw new BlockFailure('Invaild Expiry', 1004);
+					break;
+				case 'invaliduser':
+				case 'invalidip':
+					$this->log('Failed to block user '.$name.' with error 1005 Invaild User/IP', LG_ERROR);
+					throw new BlockFailure('Invaild User/IP', 1005);
+					break;
+				default:
+					$this->log('Failed to block user '.$name.' with error 1000 Block Failure', LG_ERROR);
+					throw new BlockFailure('Block Failure', 1000);
+			}
+		}
+		return true;
+	}
+	
+	/**
 	 * Protects a page
 	 *
 	 * @param string $page Page title to protect

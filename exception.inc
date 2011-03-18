@@ -143,7 +143,7 @@ class UploadFailure extends BotException {}
  * The exception Delete Failure (9xx)
  * 
  * Error Codes:
- * + 900 Delete Failure
+ * + 900 Undelete Failure
  * + 901 Not Deleted
  * + 902 Blocked
  * + 903 Forbidden
@@ -152,6 +152,21 @@ class UploadFailure extends BotException {}
  * @package Exception
  */
 class UndeleteFailure extends BotException {}
+
+/**
+ * The exception Delete Failure (10xx)
+ * 
+ * Error Codes:
+ * + 1000 Block Failure
+ * + 1001 Already Blocked
+ * + 1002 Blocked
+ * + 1003 Forbidden
+ * + 1004 Invaild Expiry
+ * + 1005 Invaild User/IP
+ *
+ * @package Exception
+ */
+class BlockFailure extends BotException {}
 
 //class LoginFailure extends BotException {}*/
 
