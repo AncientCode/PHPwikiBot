@@ -565,9 +565,6 @@ EOD;
 					throw new BlockFailure('Blocked', 1002);
 					break;
 				case 'permissiondenied':
-				case 'protectedtitle':
-				case 'protectedpage':
-				case 'protectednamespace':
 				case 'cantblock':
 				case 'cantblock-email':
 				case 'rangedisabled':
@@ -588,6 +585,55 @@ EOD;
 				default:
 					$this->log('Failed to block user '.$name.' with error 1000 Block Failure', LG_ERROR);
 					throw new BlockFailure('Block Failure', 1000);
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * Unlocks a user
+	 *
+	 * @param string $name Username
+	 * @param string $reason Reason for unblocking
+	 * @return bool True on success
+	 * @throws BlockFailure
+	 */
+	public function unblock ($name, $reason = '') {
+		$resp = $this->postAPI('action=query&prop=info&intoken=unblock&titles=User:'.$name);
+		//var_dump($resp);
+		if (isset($resp['warnings']['info']['*']) && strstr($resp['warnings']['info']['*'], 'not allowed')) {
+			$this->log('Failed to unblock user '.$name.' with error 1003 Forbidden', LG_ERROR);
+			throw new BlockFailure('Forbidden', 1003);
+		}
+		foreach ($resp['query']['pages'] as $v)
+			$token = $v['blocktoken'];
+		//echo $token;
+		$query = 'action=unblock&user='.urlencode($name).'&token='.urlencode($token);
+		if ($reason)
+			$query .= '&reason='.$reason;
+		else
+			$query .= '&reason='.urlencode('Sorry '.$name);
+		$resp = $this->postAPI($query);
+		//var_dump($resp);
+		if (isset($response['error'])) {
+			switch ($response['error']['code']) {
+				case 'blocked':
+				case 'autoblocked':
+					$this->log('Failed to unblock user '.$name.' with error 1002 Blocked', LG_ERROR);
+					throw new BlockFailure('Blocked', 1002);
+					break;
+				case 'permissiondenied':
+				case 'cantunblock':
+					$this->log('Failed to unblock user '.$name.' with error 1003 Forbidden', LG_ERROR);
+					throw new BlockFailure('Forbidden', 1003);
+					break;
+				case 'cantunblock':
+					$this->log('Failed to unblock user '.$name.' with error 1007 Not Blocked', LG_ERROR);
+					throw new BlockFailure('Not Blocked', 1007);
+					break;
+				default:
+					$this->log('Failed to unblock user '.$name.' with error 1000 Unblock Failure', LG_ERROR);
+					throw new BlockFailure('Unblock Failure', 1000);
 			}
 		}
 		return true;
