@@ -1005,17 +1005,24 @@ EOD;
 	protected function conninit() {
 		$this->get = curl_init();
 		$this->post = curl_init();
+		$header = array(
+			'Connection: keep-alive',
+			'Keep-Alive: 300'
+			); 
 		$cfg = array(
 				CURLOPT_RETURNTRANSFER => true,
 				CURLOPT_COOKIEJAR => 'cookie.txt',
 				CURLOPT_COOKIEFILE => 'cookie.txt',
 				CURLOPT_USERAGENT => $this->useragent,
 				CURLOPT_HEADER => false,
+				CURLOPT_ENCODING => 'gzip,deflate',
+				CURLOPT_HTTPHEADER => $header,
 				);
+		$header[] = 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8';
 		$post = array(
 				CURLOPT_URL => $this->api_url,
 				CURLOPT_POST => true,
-				CURLOPT_HTTPHEADER => array('Content-Type: application/x-www-form-urlencoded;charset=UTF-8'),
+				CURLOPT_HTTPHEADER => $header,
 				);
 		curl_setopt_array($this->get, $cfg);
 		curl_setopt_array($this->post, $cfg);
