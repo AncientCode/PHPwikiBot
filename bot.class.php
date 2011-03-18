@@ -268,7 +268,7 @@ EOD;
 	 *
 	 */
 	public function get_page_cat($page) {
-		$response = $this->getAPI('action=query&prop=categories&titles='.urlencode($page));
+		$response = $this->postAPI('action=query&prop=categories&titles='.urlencode($page));
 		//var_dump($response);
 		foreach ($response['query']['pages'] as $key => $value) {
 			var_dump($value);
@@ -298,7 +298,7 @@ EOD;
 			$query .= '&cmnamespace=' . $ns;
 		if ($start != '')
 			$query .= '&cmcontinue=' . urlencode($start);
-		$result = $this->getAPI($query);
+		$result = $this->postAPI($query);
 		$cm = $result['query']['categorymembers'];
 		$pages = array();
 		$j = count($cm);
@@ -325,7 +325,7 @@ EOD;
 	 * @throws EditFailure
 	 */
 	public function create_page($page, $text, $summary, $minor = false, $force = false) {
-		$response = $this->getAPI('action=query&prop=info|revisions&intoken=edit&titles=' . urlencode($page));
+		$response = $this->postAPI('action=query&prop=info|revisions&intoken=edit&titles=' . urlencode($page));
 		$this->editdetails = $response['query']['pages'];
 		if (!isset($this->editdetails[-1])) throw new EditFailure('Page Exists', 420);
 		$bot = false;
@@ -351,7 +351,7 @@ EOD;
 	 * @throws EditFailure
 	 */
 	public function edit_page($page, $text, $summary, $minor = false, $force = false) {
-		$response = $this->getAPI('action=query&prop=info|revisions&intoken=edit&titles=' . urlencode($page));
+		$response = $this->postAPI('action=query&prop=info|revisions&intoken=edit&titles=' . urlencode($page));
 		$this->editdetails = $response['query']['pages'];
 		if (isset($this->editdetails[-1])) throw new EditFailure('Page Doesn\'t Exist', 421);
 		$bot = false;
@@ -378,7 +378,7 @@ EOD;
 	 * @throws MoveFailure
 	 */
 	public function move_page($from, $to, $reason = '', $talk = true, $sub = true, $redirect = true) {
-		$response = $this->getAPI('action=query&prop=info&intoken=move&titles=' . urlencode($from));
+		$response = $this->postAPI('action=query&prop=info&intoken=move&titles=' . urlencode($from));
 		//var_dump($response);
 		foreach ($response['query']['pages'] as $v) {
 			if (isset($v['invalid'])) throw new ProtectFailure('Invalid Title', 507);
@@ -414,7 +414,7 @@ EOD;
 				case 'nonfilenamespace': // 504 Wrong Namespace
 					throw new MoveFailure('Wrong Namespace', 505);
 					break;
-				case 'selfmove': // 504 Extension Mismatch
+				case 'selfmove': // 506 Self Move
 					throw new MoveFailure('Self Move', 506);
 					break;
 				default:
@@ -434,7 +434,7 @@ EOD;
 	 *
 	 */
 	public function del_page($page, $reason = '') {
-		$response = $this->getAPI('action=query&prop=info&intoken=delete&titles=' . urlencode($page));
+		$response = $this->postAPI('action=query&prop=info&intoken=delete&titles=' . urlencode($page));
 		//var_dump($response);
 		if (isset($response['warnings']['info']['*']) && strstr($response['warnings']['info']['*'], 'not allowed'))
 			throw new DeleteFailure('Forbidden', 603);
@@ -448,19 +448,23 @@ EOD;
 			switch ($response['error']['code']):
 				case 'cantdelete':
 				case 'missingtitle':
+					$this->log('Failed to delete '.$page.' with error 601 No Such Page', LG_ERROR);
 					throw new DeleteFailure('No Such Page', 601);
 					break;
 				case 'blocked':
 				case 'autoblocked': // 402 Blocked
+					$this->log('Failed to delete '.$page.' with error 602 Blocked', LG_ERROR);
 					throw new DeleteFailure('Blocked', 602);
 					break;
 				case 'permissiondenied':
 				case 'protectedtitle':
 				case 'protectedpage':
 				case 'protectednamespace': // 603 Forbidden
+					$this->log('Failed to delete '.$page.' with error 603 Forbidden', LG_ERROR);
 					throw new DeleteFailure('Forbidden', 603);
 					break;
 				default:
+					$this->log('Failed to delete '.$page.' with error 600 Delete Failure', LG_ERROR);
 					throw new DeleteFailure('Delete Failure', 600);
 			endswitch;
 		}
@@ -481,7 +485,7 @@ EOD;
 	 * @throws ProtectFailure
 	 */
 	public function protect_page($page, $edit, $move, $reason = '', $editexp = 'never', $movexp = 'never', $cascade = false) {
-		$response = $this->getAPI('action=query&prop=info&intoken=protect&titles=' . urlencode($page));
+		$response = $this->postAPI('action=query&prop=info&intoken=protect&titles=' . urlencode($page));
 		//var_dump($response);
 		if (isset($response['warnings']['info']['*']) && strstr($response['warnings']['info']['*'], 'not allowed'))
 			throw new ProtectFailure('Forbidden', 703);
@@ -500,28 +504,35 @@ EOD;
 		if (isset($response['error'])) {
 			switch ($response['error']['code']) {
 				case 'missingtitle-createonly':
+					$this->log('Failed to protect '.$page.' with error 701 No Such Page', LG_ERROR);
 					throw new ProtectFailure('No Such Page', 701);
 					break;
 				case 'blocked':
 				case 'autoblocked': // 702 Blocked
+					$this->log('Failed to protect '.$page.' with error 702 Blocked', LG_ERROR);
 					throw new ProtectFailure('Blocked', 702);
 					break;
 				case 'cantedit':
 				case 'permissiondenied':
 				case 'protectednamespace': // 703 Forbidden
+					$this->log('Failed to protect '.$page.' with error 703 Forbidden', LG_ERROR);
 					throw new ProtectFailure('Forbidden', 703);
 					break;
 				case 'invalidexpiry': // 705 Invaild Expiry
+					$this->log('Failed to protect '.$page.' with error 705 Invaild Expiry', LG_ERROR);
 					throw new ProtectFailure('Invaild Expiry', 705);
 					break;
 				case 'pastexpiry': // 706 Past Expiry
-					throw new DeleteFailure('Past Expiry', 706);
+					$this->log('Failed to protect '.$page.' with error 706 Past Expiry', LG_ERROR);
+					throw new ProtectFailure('Past Expiry', 706);
 					break;
 				case 'protect-invalidlevel': // 707 Invaild Level
-					throw new DeleteFailure('Invaild Level', 707);
+					$this->log('Failed to protect '.$page.' with error 707 Invaild Level', LG_ERROR);
+					throw new ProtectFailure('Invaild Level', 707);
 					break;
 				default:
-					throw new DeleteFailure('Protect Failure', 600);
+					$this->log('Failed to protect '.$page.' with error 700 Protect Failure', LG_ERROR);
+					throw new ProtectFailure('Protect Failure', 700);
 			}
 		}
 		return true;
@@ -538,8 +549,8 @@ EOD;
 	 * @throws ProtectFailure
 	 */
 	public function protect_title($page, $perm, $reason = '', $exp = 'never') {
-		$response = $this->getAPI('action=query&prop=info&intoken=protect&titles=' . urlencode($page));
-		var_dump($response);
+		$response = $this->postAPI('action=query&prop=info&intoken=protect&titles=' . urlencode($page));
+		//var_dump($response);
 		if (isset($response['warnings']['info']['*']) && strstr($response['warnings']['info']['*'], 'not allowed'))
 			throw new ProtectFailure('Forbidden', 703);
 		foreach ($response['query']['pages'] as $v) {
@@ -552,32 +563,39 @@ EOD;
 		$query .= '&protections=create='.$perm;
 		$query .= '&expiry='.$exp;
 		$response = $this->postAPI($query);
-		var_dump($response);
+		//var_dump($response);
 		if (isset($response['error'])) {
 			switch ($response['error']['code']) {
 				case 'create-titleexists':
-					throw new ProtectFailure('Page Exists', 701);
+					$this->log('Failed to protect '.$page.' with error 708 Page Exists', LG_ERROR);
+					throw new ProtectFailure('Page Exists', 708);
 					break;
 				case 'blocked':
 				case 'autoblocked': // 702 Blocked
+					$this->log('Failed to protect '.$page.' with error 702 Blocked', LG_ERROR);
 					throw new ProtectFailure('Blocked', 702);
 					break;
 				case 'cantedit':
 				case 'permissiondenied':
 				case 'protectednamespace': // 703 Forbidden
+					$this->log('Failed to protect '.$page.' with error 703 Forbidden', LG_ERROR);
 					throw new ProtectFailure('Forbidden', 703);
 					break;
 				case 'invalidexpiry': // 705 Invaild Expiry
+					$this->log('Failed to protect '.$page.' with error 705 Invaild Expiry', LG_ERROR);
 					throw new ProtectFailure('Invaild Expiry', 705);
 					break;
 				case 'pastexpiry': // 706 Past Expiry
-					throw new DeleteFailure('Past Expiry', 706);
+					$this->log('Failed to protect '.$page.' with error 706 Past Expiry', LG_ERROR);
+					throw new ProtectFailure('Past Expiry', 706);
 					break;
 				case 'protect-invalidlevel': // 707 Invaild Level
-					throw new DeleteFailure('Invaild Level', 707);
+					$this->log('Failed to protect '.$page.' with error 707 Invaild Level', LG_ERROR);
+					throw new ProtectFailure('Invaild Level', 707);
 					break;
 				default:
-					throw new DeleteFailure('Protect Failure', 600);
+					$this->log('Failed to protect '.$page.' with error 700 Protect Failure', LG_ERROR);
+					throw new ProtectFailure('Protect Failure', 700);
 			}
 		}
 		return true;
@@ -594,7 +612,7 @@ EOD;
 	 * @throws UploadFailure
 	 */
 	function upload($src, $target, $comment = '', $text = '') {
-		$response = $this->getAPI('action=query&prop=info&intoken=edit&titles=xxxxxxxx');
+		$response = $this->postAPI('action=query&prop=info&intoken=edit&titles=xxxxxxxx');
 		//var_dump($response);
 		foreach ($response['query']['pages'] as $v)
 			$token = $v['edittoken'];
@@ -608,35 +626,6 @@ EOD;
 			if ($text) $query .= '&text='.urlencode($text);
 			$response = $this->postAPI($query);
 			//var_dump($response);
-			if (isset($response['error'])) {
-				switch ($response['error']['code']) {
-					case 'empty-file':
-						throw new UploadFailure('Can\'t Fetch File', 801);
-						break;
-					case 'permissiondenied':
-						throw new UploadFailure('Forbidden', 803);
-					case 'blocked':
-					case 'autoblocked': // 702 Blocked
-						throw new UploadFailure('Blocked', 804);
-						break;
-					default:
-						throw new UploadFailure('Upload Failure', 800);
-				}
-			}
-			if ($response['upload']['result'] == 'Success'):
-				$j = $response['upload']['imageinfo'];
-				$i = array(
-						'timestamp'	=> $j['timestamp'],
-						'width'		=> $j['width'],
-						'height'	=> $j['height'],
-						'url'		=> $j['url'],
-						'page'		=> $j['descriptionurl'],
-						'mime'		=> $j['mime'],
-						);
-				//var_dump($i);
-				return $i;
-			endif;
-			throw new UploadFailure('Upload Failure', 800);
 		} else {
 			if (!is_readable($src))	throw new UploadFailure('Can\'t Read File', 802);
 			$query = array(
@@ -666,34 +655,41 @@ EOD;
 			if (curl_errno($this->post)) var_dump(curl_error($ch));
 			curl_close($ch);
 			$response = unserialize($response);
-			//var_dump($response);
-			if (isset($response['error'])) {
-				switch ($response['error']['code']) {
-					case 'permissiondenied':
-						throw new UploadFailure('Forbidden', 803);
-					case 'blocked':
-					case 'autoblocked': // 702 Blocked
-						throw new UploadFailure('Blocked', 804);
-						break;
-					default:
-						throw new UploadFailure('Upload Failure', 800);
-				}
-			}
-			if ($response['upload']['result'] == 'Success'):
-				$j = $response['upload']['imageinfo'];
-				$i = array(
-						'timestamp'	=> $j['timestamp'],
-						'width'		=> $j['width'],
-						'height'	=> $j['height'],
-						'url'		=> $j['url'],
-						'page'		=> $j['descriptionurl'],
-						'mime'		=> $j['mime'],
-						'sha1'		=> $j['sha1'],
-						);
-				return $i;
-			endif;
-			throw new UploadFailure('Upload Failure', 800);
 		}
+		if (isset($response['error'])) {
+			switch ($response['error']['code']) {
+				case 'empty-file':
+					$this->log('Failed to upload '.$src.' with error 801 Can\'t Fetch File', LG_ERROR);
+					throw new UploadFailure('Can\'t Fetch File', 801);
+					break;
+				case 'permissiondenied':
+					$this->log('Failed to upload '.$src.' with error 803 Forbidden', LG_ERROR);
+					throw new UploadFailure('Forbidden', 803);
+				case 'blocked':
+				case 'autoblocked': // 804 Blocked
+					$this->log('Failed to upload '.$src.' with error 804 Blocked', LG_ERROR);
+					throw new UploadFailure('Blocked', 804);
+					break;
+				default:
+					$this->log('Failed to upload '.$src.' with error 800 Upload Failure', LG_ERROR);
+					throw new UploadFailure('Upload Failure', 800);
+			}
+		}
+		if ($response['upload']['result'] == 'Success'):
+			$j = $response['upload']['imageinfo'];
+			$this->log('Uploaded '.$src.' to '.$j['descriptionurl'], LG_INFO);
+			$i = array(
+					'timestamp'	=> $j['timestamp'],
+					'width'		=> $j['width'],
+					'height'	=> $j['height'],
+					'url'		=> $j['url'],
+					'page'		=> $j['descriptionurl'],
+					'mime'		=> $j['mime'],
+					'sha1'		=> $j['sha1'],
+					);
+			return $i;
+		endif;
+		throw new UploadFailure('Upload Failure', 800);
 	}
 	
 	
@@ -778,6 +774,9 @@ EOD;
 				case 'protectedpage':
 				case 'protectednamespace':
 					throw new EditFailure('Protected', 405);
+					break;
+				case 'badmd5':
+					throw new EditFailure('MD5 Failed', 406);
 					break;
 				default:
 					throw new EditFailure('Edit Failure', 400);
