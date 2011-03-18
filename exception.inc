@@ -163,6 +163,8 @@ class UndeleteFailure extends BotException {}
  * + 1003 Forbidden
  * + 1004 Invaild Expiry
  * + 1005 Invaild User/IP
+ * + 1006 Unblock Failure
+ * + 1007 Not Blocked
  *
  * @package Exception
  */
