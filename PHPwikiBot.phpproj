@@ -1,0 +1,92 @@
+"General"
+{
+"ProjectType" = "local"
+"AutoLoadTemplate" = "%s.php;class.%s.php;"
+}
+"Configurations"
+{
+    "Local|PHP 5"
+    {
+    "IncludeDirs" = ""
+    }
+    "Local|PHP 4"
+    {
+    "IncludeDirs" = ""
+    }
+    "Remote|PHP 5"
+    {
+    "IncludeDirs" = ""
+    }
+    "Remote|PHP 4"
+    {
+    "IncludeDirs" = ""
+    }
+}
+"Files"
+{
+    "tutorial\\gnlwikinfo.txt"
+    {
+    "ProjRelPath" = "T"
+    }
+    "config.sample.yaml"
+    {
+    "ProjRelPath" = "T"
+    }
+    "spyc.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "bot.class.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "stddef.inc"
+    {
+    "ProjRelPath" = "T"
+    }
+    "pass.bat"
+    {
+    "ProjRelPath" = "T"
+    }
+    "test.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "cfgparse.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "README"
+    {
+    "ProjRelPath" = "T"
+    }
+    "config.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "encodepass.php"
+    {
+    "ProjRelPath" = "T"
+    }
+    "exception.inc"
+    {
+    "ProjRelPath" = "T"
+    }
+    "config.yaml"
+    {
+    "ProjRelPath" = "T"
+    }
+    "tutorial"
+    {
+    "ProjRelPath" = "T"
+    }
+}
+"ProjStartupServices"
+{
+}
+"Globals"
+{
+}
+"References"
+{
+}

@@ -1,0 +1,47 @@
+# PHPwikiBot Configuration file
+
+# User-Agent of the bot
+useragent: PHPwikiBot/0.1
+
+# OpenSSL key for openssl_decrypt, change as long as the password is properly encoded
+key: thisisakey
+
+# Log level, one of the following:
+# * LG_DEBUG
+# * LG_INFO
+# * LG_NOTICE
+# * LG_WARN
+# * LG_ERROR
+# * LG_FATAL
+log_level: LG_INFO
+
+# Logfile
+logfile: bot.log
+
+# output log
+output_log: yes
+# to STDERR?
+log2stderr: yes
+
+wiki:
+   wpen:
+      name: English-language Wikipedia
+      api: http://en.wikipedia.org/w/api.php
+      epm: 5
+users:
+   # a ID, can be anything as long as it's called in the constructor
+   user@wpen:
+      # Username
+      name: user
+      # encrypt using OpenSSL, Key=*key at the top*, method=AES-128-ECB
+      password: bOFrgK4vlD5MbsOqUH8EwA==
+      # wiki that the user belongs to
+      wiki: wpen
+      # is the user a bot???
+      bot: no
+
+   bot@wpen:
+      name: bot
+      password: bOFrgK4vlD5MbsOqUH8EwA==
+      wiki: wpen
+      bot: yes

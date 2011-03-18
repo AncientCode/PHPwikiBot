@@ -1,0 +1,12 @@
+
+*.puo
+*.suo
+/config.php
+/test.php
+/cookie.txt
+/test.txt
+/doc
+*.log
+/spyc.yaml
+*.yaml
+/config.yml
