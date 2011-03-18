@@ -472,6 +472,53 @@ EOD;
 	}
 	
 	/**
+	 * Undeletes a page with all revisions
+	 *
+	 * @param string $page Page name to undelete
+	 * @param string $reason Reason of undeleting
+	 * @return bool Return true on success
+	 * @throws UndeleteFailure
+	 */
+	public function undel_page($page, $reason = '') {
+		$response = $this->postAPI('action=query&prop=info&intoken=edit&titles=xxxxxxxx');
+		//var_dump($response);
+		foreach ($response['query']['pages'] as $v)
+			$token = $v['edittoken'];
+		//var_dump($token);
+		$query = 'action=undelete&title='.urlencode($page).'&token='.urlencode($token).'&reason='.urlencode($reason);
+		$response = $this->postAPI($query);
+		//var_dump($response);
+		if (isset($response['error'])) {
+			switch ($response['error']['code']) {
+				case 'cantdelete':
+					$this->log('Failed to undelete '.$page.' with error 901 Not Deleted', LG_ERROR);
+					throw new UndeleteFailure('No Such Page', 901);
+					break;
+				case 'blocked':
+				case 'autoblocked': // 402 Blocked
+					$this->log('Failed to undelete '.$page.' with error 902 Blocked', LG_ERROR);
+					throw new UndeleteFailure('Blocked', 902);
+					break;
+				case 'permissiondenied':
+				case 'protectedtitle':
+				case 'protectedpage':
+				case 'protectednamespace': // 603 Forbidden
+					$this->log('Failed to undelete '.$page.' with error 903 Forbidden', LG_ERROR);
+					throw new UndeleteFailure('Forbidden', 903);
+					break;
+				case 'invalidtitle':
+					$this->log('Failed to undelete '.$page.' with error 904 Invaild Title', LG_ERROR);
+					throw new UndeleteFailure('Invaild Title', 904);
+					break;
+				default:
+					$this->log('Failed to undelete '.$page.' with error 900 Delete Failure', LG_ERROR);
+					throw new UneleteFailure('Delete Failure', 900);
+			}
+		}
+		return true;
+	}
+	
+	/**
 	 * Protects a page
 	 *
 	 * @param string $page Page title to protect

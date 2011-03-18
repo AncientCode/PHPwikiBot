@@ -139,5 +139,19 @@ class ProtectFailure extends BotException {}
  */
 class UploadFailure extends BotException {}
 
+/**
+ * The exception Delete Failure (9xx)
+ * 
+ * Error Codes:
+ * + 900 Delete Failure
+ * + 901 Not Deleted
+ * + 902 Blocked
+ * + 903 Forbidden
+ * + 904 Invaild Title
+ *
+ * @package Exception
+ */
+class UndeleteFailure extends BotException {}
+
 //class LoginFailure extends BotException {}*/
 
