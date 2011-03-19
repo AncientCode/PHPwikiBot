@@ -4,6 +4,7 @@
  * @author Xiaomao
  * @package PHPwikiBot
  * @name Standard Definitions
+ * @license http://www.gnu.org/licenses/gpl.html GPLv3+
  */
 
 /**Definitions**/

@@ -5,6 +5,7 @@
  * @author Xiaomao
  * @package PHPwikiBot
  * @name Password Encoder
+ * @license http://www.gnu.org/licenses/gpl.html GPLv3+
  */
 
 /** Get the configuration File */

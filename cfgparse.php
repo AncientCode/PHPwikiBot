@@ -4,6 +4,7 @@
  * @author Xiaomao
  * @package PHPwikiBot
  * @name Configuration Parser
+ * @license http://www.gnu.org/licenses/gpl.html GPLv3+
  */
 
 /** Include the required files */
