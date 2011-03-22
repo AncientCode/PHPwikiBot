@@ -861,6 +861,17 @@ EOD;
 		throw new UploadFailure('Upload Failure', 800);
 	}
 	
+	public function email ($user, $subject, $text, $cc) {
+		$response = $this->postAPI('action=query&prop=info&intoken=email&titles=User%3A' . urlencode($user));
+		//var_dump($response);
+		if (isset($response['warnings']['info']['*']) && strstr($response['warnings']['info']['*'], 'not allowed'))
+			throw new ProtectFailure('Forbidden', 703);
+		foreach ($response['query']['pages'] as $v) {
+			if (isset($v['invalid'])) throw new ProtectFailure('Invalid Title', 704);
+			$token = $v['emailtoken'];
+		}
+		//echo $token;
+	}
 	
 	/* Internal Methods */
 	/**

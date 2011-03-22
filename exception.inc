@@ -155,7 +155,7 @@ class UploadFailure extends BotException {}
 class UndeleteFailure extends BotException {}
 
 /**
- * The exception Delete Failure (10xx)
+ * The exception Block Failure (10xx)
  * 
  * Error Codes:
  * + 1000 Block Failure
@@ -170,6 +170,19 @@ class UndeleteFailure extends BotException {}
  * @package Exception
  */
 class BlockFailure extends BotException {}
+
+/**
+ * The exception Email Failure (11xx)
+ * 
+ * Error Codes:
+ * + 1100 Block Failure
+ * + 1101 Already Blocked
+ * + 1102 Blocked
+ * + 1103 Forbidden
+ *
+ * @package Exception
+ */
+class EmailFailure extends BotException {}
 
 //class LoginFailure extends BotException {}*/
 
