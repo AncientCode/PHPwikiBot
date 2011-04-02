@@ -4,6 +4,7 @@
  * @author Xiaomao
  * @package Exception
  * @name Exception Definitions
+ * @license http://www.gnu.org/licenses/gpl.html GPLv3+
  */
 
 

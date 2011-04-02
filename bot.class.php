@@ -4,6 +4,7 @@
  * @author Xiaomao
  * @package PHPwikiBot
  * @name PHPwikiBot main class
+ * @license http://www.gnu.org/licenses/gpl.html GPLv3+
  */
 
 /**
