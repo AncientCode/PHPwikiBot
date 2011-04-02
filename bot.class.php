@@ -861,6 +861,16 @@ EOD;
 		throw new UploadFailure('Upload Failure', 800);
 	}
 	
+	/**
+	 * Emails A user
+	 *
+	 * @param string $user The User name
+	 * @param string $subject Email Subject
+	 * @param string $text Content of email
+	 * @param bool $cc Send a copy the the sender
+	 * @return bool True on success
+	 * @throws EmailFailure
+	 */
 	public function email ($user, $subject, $text, $cc) {
 		$response = $this->postAPI('action=query&prop=info&intoken=email&titles=User%3A' . urlencode($user));
 		//var_dump($response);
@@ -871,6 +881,32 @@ EOD;
 			$token = $v['emailtoken'];
 		}
 		//echo $token;
+		$query = 'action=emailuser&target='.urlencode($user).'&subject='.urlencode($subject).'&text='.urlencode($text).'&token='.urlencode($token);
+		if ($cc) $query .= '&ccme';
+		$resp = $this->postAPI($query);
+		//var_dump($resp);
+		if (isset($resp['error'])) switch ($resp['error']['code']) {
+			case 'noemail':
+			case 'usermaildisabled':
+				$this->log('Failed to email '.$user.' with error 1101 Don\'t want email', LG_ERROR);
+				throw new EmailFailure('Don\'t want email', 1101);
+				break;
+			case 'permissiondenied':
+				$this->log('Failed to email '.$user.' with error 1103 Forbidden', LG_ERROR);
+				throw new EmailFailure('Forbidden', 1103);
+			case 'blocked':
+			case 'autoblocked':
+			case 'blockedfrommail':
+				$this->log('Failed to email '.$user.' with error 1102 Blocked', LG_ERROR);
+				throw new EmailFailure('Blocked', 1102);
+				break;
+			default:
+				$this->log('Failed to email '.$user.' with error 1100 Email Failure', LG_ERROR);
+				throw new EmailFailure('Email Failure', 1100);
+		}
+		if ($resp['emailuser']['result'] == 'Success') return true;
+		$this->log('Failed to email '.$user.' with error 1100 Email Failure', LG_ERROR);
+		throw new EmailFailure('Email Failure', 1100);
 	}
 	
 	/* Internal Methods */

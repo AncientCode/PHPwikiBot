@@ -175,8 +175,8 @@ class BlockFailure extends BotException {}
  * The exception Email Failure (11xx)
  * 
  * Error Codes:
- * + 1100 Block Failure
- * + 1101 Already Blocked
+ * + 1100 Email Failure
+ * + 1101 Don't want email
  * + 1102 Blocked
  * + 1103 Forbidden
  *
