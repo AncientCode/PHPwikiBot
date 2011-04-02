@@ -191,8 +191,10 @@ class EmailFailure extends BotException {}
  * Error Codes:
  * + 1200 Import Failure
  * + 1201 Wrong Interwiki
- * + 1202 Blocked
+ * + 1202 Upload Failure
  * + 1203 Forbidden
+ * + 1204 Bad File
+ * + 1205 Server Fault
  *
  * @package Exception
  */
