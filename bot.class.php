@@ -909,6 +909,26 @@ EOD;
 		throw new EmailFailure('Email Failure', 1100);
 	}
 	
+	public function ns_get() {}
+	public function iwimp($iw, $src, $ns, $full) {}
+	public function purge($page) {
+		$query = 'action=purge&titles=';
+		if (is_array($page)) {
+			foreach ($page as &$i) $i = urlencode($i);
+			$query .= implode('|', $page);
+		} else $query .= urlencode($page);
+		$resp = $this->getAPI($query);
+		//var_dump($resp);
+		if (isset($resp['error'])) {
+			if (is_array($page))
+				$this->log('Failed to purge pages '.implode(', ', $page).' with error 11 Purge Failure', LG_ERROR);
+			else
+				$this->log('Failed to purge page '.$page.' with error 11 Purge Failure', LG_ERROR);
+			throw new EmailFailure('Purge Failure', 11);
+		}
+		return true;
+	}
+	
 	/* Internal Methods */
 	/**
 	 * Change a page's content
@@ -1062,12 +1082,14 @@ EOD;
 	 *
 	 */
 	protected function getAPI($query) {
+		//var_dump($this->api_url.'?'.$query.'&maxlag='.$this->max_lag.'&format=php');
 		curl_setopt($this->get, CURLOPT_URL, $this->api_url.'?'.$query.'&maxlag='.$this->max_lag.'&format=php');
 		$response = curl_exec($this->get);
 		if (curl_errno($this->get)) return curl_error($this->get);
 		/*$fh = fopen('test.txt', 'a');
 		fwrite($fh, $response);
 		fclose($fh);*/
+		//var_dump($response);
 		return unserialize($response);
 	}
 

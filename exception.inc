@@ -12,6 +12,7 @@
  * BotException returns has additional function getException() which returns the exception in HTTP header style
  * e.g. 100 Can't Login. Also include some errors:
  * + 10 Unexist Method
+ * + 11 Purge Failure
  * @package Exception
  */
 class BotException extends Exception {
