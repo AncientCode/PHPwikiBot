@@ -10,3 +10,8 @@
 /spyc.yaml
 *.yaml
 /config.yml
+/doxygen
+/resync.bat
+*.cache
+/gendoc.ps1
+/backup
