@@ -12,6 +12,7 @@
  * BotException returns has additional function getException() which returns the exception in HTTP header style
  * e.g. 100 Can't Login. Also include some errors:
  * + 10 Unexist Method
+ * + 11 Purge Failure
  * @package Exception
  */
 class BotException extends Exception {
@@ -155,7 +156,7 @@ class UploadFailure extends BotException {}
 class UndeleteFailure extends BotException {}
 
 /**
- * The exception Delete Failure (10xx)
+ * The exception Block Failure (10xx)
  * 
  * Error Codes:
  * + 1000 Block Failure
@@ -170,6 +171,32 @@ class UndeleteFailure extends BotException {}
  * @package Exception
  */
 class BlockFailure extends BotException {}
+
+/**
+ * The exception Email Failure (11xx)
+ * 
+ * Error Codes:
+ * + 1100 Email Failure
+ * + 1101 Don't want email
+ * + 1102 Blocked
+ * + 1103 Forbidden
+ *
+ * @package Exception
+ */
+class EmailFailure extends BotException {}
+
+/**
+ * The exception Import Failure (12xx)
+ * 
+ * Error Codes:
+ * + 1200 Import Failure
+ * + 1201 Wrong Interwiki
+ * + 1202 Blocked
+ * + 1203 Forbidden
+ *
+ * @package Exception
+ */
+class ImportFailure extends BotException {}
 
 //class LoginFailure extends BotException {}*/
 

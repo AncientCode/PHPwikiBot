@@ -171,7 +171,7 @@ class PHPwikiBot {
 		$api = $this->api_url;
 		if (function_exists('openssl_decrypt')) $crypt = 'yes';
 		else $crypt = 'no';
-		echo <<<EOD
+		return <<<EOD
 Username: $name
 Encrypted Password: $crypt
 Wiki ID: $wikid
@@ -861,6 +861,81 @@ EOD;
 		throw new UploadFailure('Upload Failure', 800);
 	}
 	
+	/**
+	 * Emails A user
+	 *
+	 * @param string $user The User name
+	 * @param string $subject Email Subject
+	 * @param string $text Content of email
+	 * @param bool $cc Send a copy the the sender
+	 * @return bool True on success
+	 * @throws EmailFailure
+	 */
+	public function email ($user, $subject, $text, $cc) {
+		$response = $this->postAPI('action=query&prop=info&intoken=email&titles=User%3A' . urlencode($user));
+		//var_dump($response);
+		if (isset($response['warnings']['info']['*']) && strstr($response['warnings']['info']['*'], 'not allowed'))
+			throw new ProtectFailure('Forbidden', 703);
+		foreach ($response['query']['pages'] as $v) {
+			if (isset($v['invalid'])) throw new ProtectFailure('Invalid Title', 704);
+			$token = $v['emailtoken'];
+		}
+		//echo $token;
+		$query = 'action=emailuser&target='.urlencode($user).'&subject='.urlencode($subject).'&text='.urlencode($text).'&token='.urlencode($token);
+		if ($cc) $query .= '&ccme';
+		$resp = $this->postAPI($query);
+		//var_dump($resp);
+		if (isset($resp['error'])) switch ($resp['error']['code']) {
+			case 'noemail':
+			case 'usermaildisabled':
+				$this->log('Failed to email '.$user.' with error 1101 Don\'t want email', LG_ERROR);
+				throw new EmailFailure('Don\'t want email', 1101);
+				break;
+			case 'permissiondenied':
+				$this->log('Failed to email '.$user.' with error 1103 Forbidden', LG_ERROR);
+				throw new EmailFailure('Forbidden', 1103);
+			case 'blocked':
+			case 'autoblocked':
+			case 'blockedfrommail':
+				$this->log('Failed to email '.$user.' with error 1102 Blocked', LG_ERROR);
+				throw new EmailFailure('Blocked', 1102);
+				break;
+			default:
+				$this->log('Failed to email '.$user.' with error 1100 Email Failure', LG_ERROR);
+				throw new EmailFailure('Email Failure', 1100);
+		}
+		if ($resp['emailuser']['result'] == 'Success') return true;
+		$this->log('Failed to email '.$user.' with error 1100 Email Failure', LG_ERROR);
+		throw new EmailFailure('Email Failure', 1100);
+	}
+	
+	public function ns_get() {}
+	
+	
+	/**
+	 * Purge the cache of a page
+	 *
+	 * @param mixed $page An array of page names or a string of page name
+	 * @return bool True on success and false on failure
+	 *
+	 */
+	public function purge($page) {
+		$query = 'action=purge&titles=';
+		if (is_array($page)) {
+			foreach ($page as &$i) $i = urlencode($i);
+			$query .= implode('|', $page);
+		} else $query .= urlencode($page);
+		$resp = $this->getAPI($query);
+		//var_dump($resp);
+		if (isset($resp['error'])) {
+			if (is_array($page))
+				$this->log('Failed to purge pages '.implode(', ', $page).' with error 11 Purge Failure', LG_ERROR);
+			else
+				$this->log('Failed to purge page '.$page.' with error 11 Purge Failure', LG_ERROR);
+			return false;
+		}
+		return true;
+	}
 	
 	/* Internal Methods */
 	/**
@@ -956,6 +1031,42 @@ EOD;
 		}
 	}
 	
+	public function iwimp($iw, $src, $ns = '', $full = false) {
+		$query = 'action=import&interwikisource='.urlencode($iw).'&interwikipage='.urlencode($src).'&token='.$this->imp_token();
+		if ($ns !== '') $query .= '&namespace='.$ns;
+		if ($full) $query .= '&fullhistory';
+		$resp = $this->postAPI($query);
+		if (isset($resp['error'])) switch ($resp['error']) {
+			case 'unknown_interwikisource':
+				$this->log('Failed to import page '.$iw.':'.$src.' with error 1201 Wrong Interwiki, Interwiki importing for that InterWiki might be disabled', LG_ERROR);
+				throw new ImportFailure('Wrong Interwiki', 1201);
+				break;
+			default:
+				$this->log('Failed to import page '.$iw.':'.$src.' with error 1200 Import Failure, Interwiki importing for that InterWiki might be disabled', LG_ERROR);
+				throw new ImportFailure('Import Failure', 1200);
+		}
+		if (isset($resp['import'][0]['revisions']))
+			return $resp['import'][0]['revisions'];
+		$this->log('Failed to import page '.$iw.':'.$src.' with error 1200 Import Failure, Interwiki importing for that InterWiki might be disabled', LG_ERROR);
+		throw new ImportFailure('Import Failure', 1200);
+	}
+	
+	
+	/**
+	 * Fetch the import token
+	 *
+	 * @return string urlencode()ed version of token
+	 *
+	 */
+	protected function imp_token() {
+		$resp = $this->postAPI('action=query&prop=info&intoken=import&titles=Main%20Page');
+		//var_dump($resp);
+		if (isset($resp['warnings']['info']['*']) && strstr($resp['warnings']['info']['*'], 'not allowed'))
+			throw new ImportFailure('Forbidden', 1203);
+		foreach ($resp['query']['pages'] as $v)
+			return urlencode($v['importtoken']);
+	}
+	
 	/**
 	* The login method, used to logon to MediaWiki's API
 	*
@@ -1015,12 +1126,14 @@ EOD;
 	 *
 	 */
 	protected function getAPI($query) {
+		//var_dump($this->api_url.'?'.$query.'&maxlag='.$this->max_lag.'&format=php');
 		curl_setopt($this->get, CURLOPT_URL, $this->api_url.'?'.$query.'&maxlag='.$this->max_lag.'&format=php');
 		$response = curl_exec($this->get);
 		if (curl_errno($this->get)) return curl_error($this->get);
 		/*$fh = fopen('test.txt', 'a');
 		fwrite($fh, $response);
 		fclose($fh);*/
+		//var_dump($response);
 		return unserialize($response);
 	}
 
