@@ -91,13 +91,13 @@ class PHPwikiBot {
 	 * @var array
 	 */
 	protected $loglevelname = array(
-								LG_INFO => 'Info',
-								LG_DEBUG => 'Debug Info',
-								LG_NOTICE => 'Notice',
-								LG_WARN => 'Warning',
-								LG_ERROR => 'Error',
-								LG_FATAL => 'Fatal Error',
-								);
+		LG_INFO => 'Info',
+		LG_DEBUG => 'Debug Info',
+		LG_NOTICE => 'Notice',
+		LG_WARN => 'Warning',
+		LG_ERROR => 'Error',
+		LG_FATAL => 'Fatal Error',
+		);
 	/**
 	 * Whether to output the log to STDOUT/STDERR
 	 * @var array
@@ -196,7 +196,7 @@ EOD;
 	}
 	
 	/* Public Callable Methods */
-
+	
 	/**
 	 * Get General wiki info
 	 *
@@ -260,7 +260,7 @@ EOD;
 			throw new GetPageFailure('Can\'t Fetch Page', 200);
 		}
 	}
-
+	
 	/**
 	 * Get a page's category
 	 *
@@ -396,30 +396,30 @@ EOD;
 		//var_dump($response);
 		if (isset($response['error'])) {
 			switch ($response['error']['code']):
-				case 'articleexists': // 501 Destination Exists
-					throw new MoveFailure('Destination Exists', 501);
-					break;
-				case 'protectedpage':
-				case 'protectedtitle':
-				case 'immobilenamespace': // 502 Protected
-					throw new MoveFailure('Protected', 502);
-					break;
-				case 'cantmove':
-				case 'cantmovefile':
-				case 'cantmove-anon': // 503 Forbidden
-					throw new MoveFailure('Forbidden', 503);
-					break;
-				case 'filetypemismatch': // 504 Extension Mismatch
-					throw new MoveFailure('Extension Mismatch', 504);
-					break;
-				case 'nonfilenamespace': // 504 Wrong Namespace
-					throw new MoveFailure('Wrong Namespace', 505);
-					break;
-				case 'selfmove': // 506 Self Move
-					throw new MoveFailure('Self Move', 506);
-					break;
-				default:
-					throw new MoveFailure('Move Failure', 500);
+			case 'articleexists': // 501 Destination Exists
+				throw new MoveFailure('Destination Exists', 501);
+				break;
+			case 'protectedpage':
+			case 'protectedtitle':
+			case 'immobilenamespace': // 502 Protected
+				throw new MoveFailure('Protected', 502);
+				break;
+			case 'cantmove':
+			case 'cantmovefile':
+			case 'cantmove-anon': // 503 Forbidden
+				throw new MoveFailure('Forbidden', 503);
+				break;
+			case 'filetypemismatch': // 504 Extension Mismatch
+				throw new MoveFailure('Extension Mismatch', 504);
+				break;
+			case 'nonfilenamespace': // 504 Wrong Namespace
+				throw new MoveFailure('Wrong Namespace', 505);
+				break;
+			case 'selfmove': // 506 Self Move
+				throw new MoveFailure('Self Move', 506);
+				break;
+			default:
+				throw new MoveFailure('Move Failure', 500);
 			endswitch;
 		}
 		return true;
@@ -447,26 +447,26 @@ EOD;
 		$response = $this->postAPI($query);
 		if (isset($response['error'])) {
 			switch ($response['error']['code']):
-				case 'cantdelete':
-				case 'missingtitle':
-					$this->log('Failed to delete '.$page.' with error 601 No Such Page', LG_ERROR);
-					throw new DeleteFailure('No Such Page', 601);
-					break;
-				case 'blocked':
-				case 'autoblocked': // 402 Blocked
-					$this->log('Failed to delete '.$page.' with error 602 Blocked', LG_ERROR);
-					throw new DeleteFailure('Blocked', 602);
-					break;
-				case 'permissiondenied':
-				case 'protectedtitle':
-				case 'protectedpage':
-				case 'protectednamespace': // 603 Forbidden
-					$this->log('Failed to delete '.$page.' with error 603 Forbidden', LG_ERROR);
-					throw new DeleteFailure('Forbidden', 603);
-					break;
-				default:
-					$this->log('Failed to delete '.$page.' with error 600 Delete Failure', LG_ERROR);
-					throw new DeleteFailure('Delete Failure', 600);
+			case 'cantdelete':
+			case 'missingtitle':
+				$this->log('Failed to delete '.$page.' with error 601 No Such Page', LG_ERROR);
+				throw new DeleteFailure('No Such Page', 601);
+				break;
+			case 'blocked':
+			case 'autoblocked': // 402 Blocked
+				$this->log('Failed to delete '.$page.' with error 602 Blocked', LG_ERROR);
+				throw new DeleteFailure('Blocked', 602);
+				break;
+			case 'permissiondenied':
+			case 'protectedtitle':
+			case 'protectedpage':
+			case 'protectednamespace': // 603 Forbidden
+				$this->log('Failed to delete '.$page.' with error 603 Forbidden', LG_ERROR);
+				throw new DeleteFailure('Forbidden', 603);
+				break;
+			default:
+				$this->log('Failed to delete '.$page.' with error 600 Delete Failure', LG_ERROR);
+				throw new DeleteFailure('Delete Failure', 600);
 			endswitch;
 		}
 		return true;
@@ -777,7 +777,7 @@ EOD;
 	 * @param string $target Target file name
 	 * @param string $comment Upload comment
 	 * @param string $text File page content
-	 * @return array an array with file data
+	 * @return class a class with file data(UploadData)
 	 * @throws UploadFailure
 	 */
 	function upload($src, $target, $comment = '', $text = '') {
@@ -847,15 +847,14 @@ EOD;
 		if ($response['upload']['result'] == 'Success'):
 			$j = $response['upload']['imageinfo'];
 			$this->log('Uploaded '.$src.' to '.$j['descriptionurl'], LG_INFO);
-			$i = array(
-					'timestamp'	=> $j['timestamp'],
-					'width'		=> $j['width'],
-					'height'	=> $j['height'],
-					'url'		=> $j['url'],
-					'page'		=> $j['descriptionurl'],
-					'mime'		=> $j['mime'],
-					'sha1'		=> $j['sha1'],
-					);
+			$i = new UploadData;
+			$i->timestamp	= $j['timestamp'];
+			$i->width		= $j['width'];
+			$i->height		= $j['height'];
+			$i->url			= $j['url'];
+			$i->page		= $j['descriptionurl'];
+			$i->mime		= $j['mime'];
+			$i->sha1		= $j['sha1'];
 			return $i;
 		endif;
 		throw new UploadFailure('Upload Failure', 800);
@@ -1227,7 +1226,7 @@ EOD;
 		//var_dump($response);
 		return unserialize($response);
 	}
-
+	
 	/**
 	 * Perform a POST request to the API
 	 *
@@ -1257,9 +1256,9 @@ EOD;
 		$this->get = curl_init();
 		$this->post = curl_init();
 		$header = array(
-			'Connection: keep-alive',
-			'Keep-Alive: 300'
-			); 
+				'Connection: keep-alive',
+				'Keep-Alive: 300'
+				); 
 		$cfg = array(
 				CURLOPT_RETURNTRANSFER => true,
 				CURLOPT_COOKIEJAR => 'cookie.txt',
@@ -1341,36 +1340,34 @@ EOD;
  *
  */
 class ExportedPage {
-	
 	/**
 	 * XML Export
-	 *
-	 * @var string 
-	 *
+	 * @var string
 	 */
 	public $xml;
-	
 	/**
 	 * Page id
-	 *
-	 * @var int 
-	 *
+	 * @var int
 	 */
 	public $id;
-	
 	/**
 	 * Page Namespace ID
-	 *
-	 * @var int 
-	 *
+	 * @var int
 	 */
 	public $ns;
-	
 	/**
 	 * Page title
-	 *
-	 * @var string 
-	 *
+	 * @var string
 	 */
 	public $title;
+}
+
+class UploadData {
+	public $timestamp;
+	public $width;
+	public $height;
+	public $url;
+	public $page;
+	public $mime;
+	public $sha1;
 }
