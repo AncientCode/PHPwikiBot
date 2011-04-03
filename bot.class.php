@@ -1035,17 +1035,35 @@ EOD;
 		return true;
 	}
 	
+	/**
+	 * Exports a page to xml
+	 *
+	 * @param mixed $page Array of titles in strings or a string of title
+	 * @return mixed An array of ExportedPage or a object of ExportedPage
+	 * @throws BotException
+	 */
 	public function export($page) {
-		$resp = $this->getAPI('action=query&titles='.urlencode($page).'&export');
-		//var_dump($resp);
-		$i = new ExportedPage;
-		foreach ($resp['query']['pages'] as $b) {
-			$i->id = $b['pageid'];
-			$i->ns = $b['ns'];
-			$i->title = $b['title'];
+		if (is_string($page)) {
+			$resp = $this->getAPI('action=query&titles='.urlencode($page).'&export');
+			//var_dump($resp);
+			$i = new ExportedPage;
+			foreach ($resp['query']['pages'] as $b) {
+				$i->title = $b['title'];
+				if (isset($b['missing'])) return $i;
+				$i->id = $b['pageid'];
+				$i->ns = $b['ns'];
+				$i->title = $b['title'];
+			}
+			$i->xml = $resp['query']['export']['*'];
+			return $i;
+		} elseif (is_array($page)) {
+			$i = array();
+			foreach ($page as $pg)
+				$i[$pg] = $this->export($pg);
+			return $i;
 		}
-		$i->xml = $resp['query']['export']['*'];
-		return $i;
+		$this->log('PHPwikiBot::export() requires an string or an array for argument no. 1!', LG_FATAL);
+		throw new BotException('Usage Error', 12);
 	}
 	
 	/* Internal Methods */

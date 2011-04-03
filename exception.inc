@@ -13,6 +13,7 @@
  * e.g. 100 Can't Login. Also include some errors:
  * + 10 Unexist Method
  * + 11 Purge Failure
+ * + 12 Usage Error
  * @package Exception
  */
 class BotException extends Exception {
