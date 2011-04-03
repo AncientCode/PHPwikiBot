@@ -984,7 +984,7 @@ EOD;
 		if (curl_errno($ch)) var_dump(curl_error($ch));
 		curl_close($ch);
 		$resp = unserialize($resp);
-		var_dump($resp);
+		//var_dump($resp);
 		if (isset($resp['error'])) switch ($resp['error']['code']) {
 			case 'cantimport-upload':
 				$this->log('Failed to import file '.$file.' with error 1203 Forbidden', LG_ERROR);
@@ -1027,9 +1027,9 @@ EOD;
 		//var_dump($resp);
 		if (isset($resp['error'])) {
 			if (is_array($page))
-				$this->log('Failed to purge pages '.implode(', ', $page).' with error 11 Purge Failure', LG_ERROR);
+				$this->log('Failed to purge pages '.implode(', ', $page).' with error 11 Purge Failure', LG_NOTICE);
 			else
-				$this->log('Failed to purge page '.$page.' with error 11 Purge Failure', LG_ERROR);
+				$this->log('Failed to purge page '.$page.' with error 11 Purge Failure', LG_NOTICE);
 			return false;
 		}
 		return true;
@@ -1064,6 +1064,26 @@ EOD;
 		}
 		$this->log('PHPwikiBot::export() requires an string or an array for argument no. 1!', LG_FATAL);
 		throw new BotException('Usage Error', 12);
+	}
+	
+	/**
+	 * Exports page(s) to file(s)
+	 *
+	 * @param array $page Array Page name => file
+	 * @return int Number of pages exported
+	 *
+	 */
+	public function export_file($page) {
+		$c = 0;
+		foreach ($page as $p => $f) {
+			$i = $this->export($p);
+			if ($i->xml !== NULL) {
+				if (file_put_contents($f, $i->xml) === false)
+					$this->log('Failed to export '.$p.' to '.$f);
+				else ++$c;
+			} else $this->log('Page '.$p.' doesn\'t exist!!');
+		}
+		return $c;
 	}
 	
 	/* Internal Methods */
