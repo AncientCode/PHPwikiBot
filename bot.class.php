@@ -1337,7 +1337,6 @@ EOD;
 
 /**
  * A class for one exported pages
- *
  */
 class ExportedPage {
 	/**
@@ -1362,12 +1361,43 @@ class ExportedPage {
 	public $title;
 }
 
+/**
+ * Upload File Data
+ */
 class UploadData {
+	/**
+	 * Timestamp of upload
+	 * @var string
+	 */
 	public $timestamp;
+	/**
+	 * Image Width
+	 * @var int
+	 */
 	public $width;
+	/**
+	 * Image Height
+	 * @var int
+	 */
 	public $height;
+	/**
+	 * Image URL
+	 * @var string
+	 */
 	public $url;
+	/**
+	 * Description Page
+	 * @var string
+	 */
 	public $page;
+	/**
+	 * MIME type
+	 * @var string
+	 */
 	public $mime;
+	/**
+	 * File SHA1
+	 * @var string
+	 */
 	public $sha1;
 }
