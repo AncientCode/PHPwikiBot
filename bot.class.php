@@ -13,6 +13,7 @@
 require_once dirname(__FILE__).'/stddef.inc';
 require_once INC.'cfgparse.php';
 require_once INC.'exception.inc';
+require_once INC.'data.class.php';
 
 
 /**
@@ -164,6 +165,7 @@ class PHPwikiBot {
 	 *
 	 */
 	function __toString() {
+		// Get all required info
 		$name = $this->user;
 		$wikid = $this->wikid;
 		$wikiname = $this->wikiname;
@@ -191,6 +193,7 @@ EOD;
 	 * @throws BotException
 	 */
 	public function __call($name, $arguments) {
+		// Logs before throwing exceptions
 		$this->log('Called unexist method "'.$name.'('.implode(', ', $arguments).'"!', LG_FATAL);
 		throw new BotException('Unexist Method', 10);
 	}
@@ -1370,74 +1373,4 @@ EOD;
 	protected function is_url($url) {
 		return (bool)preg_match('/^(http|https|ftp):\/\/[A-Za-z0-9]+\.[A-Za-z0-9]+[\/=\?%\-&_~`@[\]\':+!]*([^<>\"])*$/', $url);
 	}
-}
-
-
-/**
- * A class for one exported pages
- * @package DataObjects
- */
-class ExportedPage {
-	/**
-	 * XML Export
-	 * @var string
-	 */
-	public $xml;
-	/**
-	 * Page id
-	 * @var int
-	 */
-	public $id;
-	/**
-	 * Page Namespace ID
-	 * @var int
-	 */
-	public $ns;
-	/**
-	 * Page title
-	 * @var string
-	 */
-	public $title;
-}
-
-/**
- * Upload File Data
- * @package DataObjects
- */
-class UploadData {
-	/**
-	 * Timestamp of upload
-	 * @var string
-	 */
-	public $timestamp;
-	/**
-	 * Image Width
-	 * @var int
-	 */
-	public $width;
-	/**
-	 * Image Height
-	 * @var int
-	 */
-	public $height;
-	/**
-	 * Image URL
-	 * @var string
-	 */
-	public $url;
-	/**
-	 * Description Page
-	 * @var string
-	 */
-	public $page;
-	/**
-	 * MIME type
-	 * @var string
-	 */
-	public $mime;
-	/**
-	 * File SHA1
-	 * @var string
-	 */
-	public $sha1;
 }
