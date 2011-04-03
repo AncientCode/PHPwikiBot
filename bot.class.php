@@ -1355,6 +1355,7 @@ EOD;
 
 /**
  * A class for one exported pages
+ * @package DataObjects
  */
 class ExportedPage {
 	/**
@@ -1381,6 +1382,7 @@ class ExportedPage {
 
 /**
  * Upload File Data
+ * @package DataObjects
  */
 class UploadData {
 	/**
