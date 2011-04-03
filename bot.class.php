@@ -911,6 +911,105 @@ EOD;
 	
 	public function ns_get() {}
 	
+	/**
+	 * Imports a page from InterWiki
+	 *
+	 * @param string $iw InterWiki name
+	 * @param string $src Source page
+	 * @param int $ns Target namespace id
+	 * @param bool $full Full revision import
+	 * @return int Number of revisions imported
+	 * @throws ImportFailure
+	 */
+	public function iwimp($iw, $src, $ns = '', $full = false) {
+		$query = 'action=import&interwikisource='.urlencode($iw).'&interwikipage='.urlencode($src).'&token='.$this->imp_token();
+		if ($ns !== '') $query .= '&namespace='.$ns;
+		if ($full) $query .= '&fullhistory';
+		$resp = $this->postAPI($query);
+		if (isset($resp['error'])) switch ($resp['error']['code']) {
+			case 'unknown_interwikisource':
+			case 'badinterwiki':
+				$this->log('Failed to import page '.$iw.':'.$src.' with error 1201 Wrong Interwiki, Interwiki importing for that InterWiki might be disabled', LG_ERROR);
+				throw new ImportFailure('Wrong Interwiki', 1201);
+				break;
+			case 'cantimport':
+				$this->log('Failed to import page '.$iw.':'.$src.' with error 1203 Forbidden', LG_ERROR);
+				throw new ImportFailure('Forbidden', 1203);
+				break;
+			default:
+				$this->log('Failed to import page '.$iw.':'.$src.' with error 1200 Import Failure', LG_ERROR);
+				throw new ImportFailure('Import Failure', 1200);
+		}
+		if (isset($resp['import'][0]['revisions']))
+			return $resp['import'][0]['revisions'];
+		$this->log('Failed to import page '.$iw.':'.$src.' with error 1200 Import Failure', LG_ERROR);
+		throw new ImportFailure('Import Failure', 1200);
+	}
+	
+	/**
+	 * Imports an XML file
+	 *
+	 * @param string $file File name, checked in function
+	 * @return int Number of revisions imported
+	 * @throws ImportFailure
+	 */
+	public function impxml($file) {
+		if (!is_readable($file)) {
+			$this->log('Failed to import file '.$file.' with error 1204 Bad File', LG_ERROR);
+			throw new ImportFailure('Bad File', 1204);
+		}
+		if (function_exists('simplexml_load_file')) if (!@simplexml_load_file($file)) {
+				$this->log('Failed to import file '.$file.' with error 1204 Bad File', LG_ERROR);
+				throw new ImportFailure('Bad File', 1204);
+			}
+		$query = array(
+				'action'	=> 'import',
+				'xml'		=> "@$file",
+				'token'		=> urldecode($this->imp_token()),
+				'format'	=> 'php'
+				);
+		$ch = curl_init();
+		$cfg = array(
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_COOKIEJAR => 'cookie.txt',
+				CURLOPT_COOKIEFILE => 'cookie.txt',
+				CURLOPT_USERAGENT => $this->useragent,
+				CURLOPT_HEADER => false,
+				CURLOPT_URL => $this->api_url,
+				CURLOPT_POST => true,
+				CURLOPT_POSTFIELDS => $query,
+				CURLOPT_HTTPHEADER => array('Content-Type: multipart/form-data'),
+				);
+		curl_setopt_array($ch, $cfg);
+		$resp = curl_exec($ch);
+		if (curl_errno($ch)) var_dump(curl_error($ch));
+		curl_close($ch);
+		$resp = unserialize($resp);
+		var_dump($resp);
+		if (isset($resp['error'])) switch ($resp['error']['code']) {
+			case 'cantimport-upload':
+				$this->log('Failed to import file '.$file.' with error 1203 Forbidden', LG_ERROR);
+				throw new ImportFailure('Forbidden', 1203);
+				break;
+			case 'partialupload':
+			case 'filetoobig':
+				$this->log('Failed to import file '.$file.' with error 1202 Upload Failure', LG_ERROR);
+				throw new ImportFailure('Upload Failure', 1202);
+				break;
+			case 'notempdir':
+			case 'cantopenfile':
+				$this->log('Failed to import file '.$file.' with error 1205 Server Fault', LG_ERROR);
+				throw new ImportFailure('Server Fault', 1202);
+				break;
+			default:
+				$this->log('Failed to import file '.$file.' with error 1200 Import Failure', LG_ERROR);
+				throw new ImportFailure('Import Failure', 1200);
+		}
+		if (isset($resp['import'][0]['revisions']))
+			return $resp['import'][0]['revisions'];
+		$this->log('Failed to import file '.$file.' with error 1200 Import Failure', LG_ERROR);
+		throw new ImportFailure('Import Failure', 1200);
+	}
 	
 	/**
 	 * Purge the cache of a page
@@ -1001,112 +1100,34 @@ EOD;
 			$this->log('Successfully edited page ' . $response['edit']['title'], LG_INFO);
 			sleep($this->epm);
 			return true;
-		/*Being worked on to throw the right exception*/
+			/*Being worked on to throw the right exception*/
 		} elseif (isset($response['error'])) {
 			$this->log('[' . $response['error']['code'] . '] ' . $response['error']['info'], LG_ERROR);
 			switch ($response['error']['code']):
-				case 'cantcreate':
-				case 'permissiondenied':
-				case 'noedit': // 403 Forbidden
-					throw new EditFailure('Forbidden', 403);
-					break;
-				case 'blocked':
-				case 'autoblocked': // 404 Blocked
-					throw new EditFailure('Blocked', 404);
-					break;
-				case 'protectedtitle':
-				case 'protectedpage':
-				case 'protectednamespace':
-					throw new EditFailure('Protected', 405);
-					break;
-				case 'badmd5':
-					throw new EditFailure('MD5 Failed', 406);
-					break;
-				default:
-					throw new EditFailure('Edit Failure', 400);
+			case 'cantcreate':
+			case 'permissiondenied':
+			case 'noedit': // 403 Forbidden
+				throw new EditFailure('Forbidden', 403);
+				break;
+			case 'blocked':
+			case 'autoblocked': // 404 Blocked
+				throw new EditFailure('Blocked', 404);
+				break;
+			case 'protectedtitle':
+			case 'protectedpage':
+			case 'protectednamespace':
+				throw new EditFailure('Protected', 405);
+				break;
+			case 'badmd5':
+				throw new EditFailure('MD5 Failed', 406);
+				break;
+			default:
+				throw new EditFailure('Edit Failure', 400);
 			endswitch;
 		} else {
 			$this->log('[' . $response['edit']['result'] . '] ' . $response['error']['info'], LG_ERROR);
 			throw EditFailure('Edit Failure', 400);
 		}
-	}
-	
-	public function iwimp($iw, $src, $ns = '', $full = false) {
-		$query = 'action=import&interwikisource='.urlencode($iw).'&interwikipage='.urlencode($src).'&token='.$this->imp_token();
-		if ($ns !== '') $query .= '&namespace='.$ns;
-		if ($full) $query .= '&fullhistory';
-		$resp = $this->postAPI($query);
-		if (isset($resp['error'])) switch ($resp['error']) {
-			case 'unknown_interwikisource':
-			case 'badinterwiki':
-				$this->log('Failed to import page '.$iw.':'.$src.' with error 1201 Wrong Interwiki, Interwiki importing for that InterWiki might be disabled', LG_ERROR);
-				throw new ImportFailure('Wrong Interwiki', 1201);
-				break;
-			case 'cantimport':
-				$this->log('Failed to import page '.$iw.':'.$src.' with error 1203 Forbidden', LG_ERROR);
-				throw new ImportFailure('Forbidden', 1203);
-				break;
-			default:
-				$this->log('Failed to import page '.$iw.':'.$src.' with error 1200 Import Failure', LG_ERROR);
-				throw new ImportFailure('Import Failure', 1200);
-		}
-		if (isset($resp['import'][0]['revisions']))
-			return $resp['import'][0]['revisions'];
-		$this->log('Failed to import page '.$iw.':'.$src.' with error 1200 Import Failure', LG_ERROR);
-		throw new ImportFailure('Import Failure', 1200);
-	}
-	
-	public function impxml($file) {
-		if (!is_readable($file)) {
-			$this->log('Failed to import file '.$file.' with error 1204 Bad File', LG_ERROR);
-			throw new ImportFailure('Bad File', 1204);
-		}
-		$query = array(
-				'action'	=> 'import',
-				'xml'		=> "@$file",
-				'token'		=> $this->imp_token(),
-				'format'	=> 'php'
-				);
-		$ch = curl_init();
-		$cfg = array(
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_COOKIEJAR => 'cookie.txt',
-				CURLOPT_COOKIEFILE => 'cookie.txt',
-				CURLOPT_USERAGENT => $this->useragent,
-				CURLOPT_HEADER => false,
-				CURLOPT_URL => $this->api_url,
-				CURLOPT_POST => true,
-				CURLOPT_POSTFIELDS => $query,
-				CURLOPT_HTTPHEADER => array('Content-Type: multipart/form-data'),
-				);
-		curl_setopt_array($ch, $cfg);
-		$resp = curl_exec($ch);
-		if (curl_errno($ch)) var_dump(curl_error($ch));
-		curl_close($ch);
-		$resp = unserialize($response);
-		if (isset($resp['error'])) switch ($resp['error']) {
-			case 'cantimport-upload':
-				$this->log('Failed to import file '.$file.' with error 1203 Forbidden', LG_ERROR);
-				throw new ImportFailure('Forbidden', 1203);
-				break;
-			case 'partialupload':
-			case 'filetoobig':
-				$this->log('Failed to import file '.$file.' with error 1202 Upload Failure', LG_ERROR);
-				throw new ImportFailure('Upload Failure', 1202);
-				break;
-			case 'notempdir':
-			case 'cantopenfile':
-				$this->log('Failed to import file '.$file.' with error 1205 Server Fault', LG_ERROR);
-				throw new ImportFailure('Server Fault', 1202);
-				break;
-			default:
-				$this->log('Failed to import file '.$file.' with error 1200 Import Failure', LG_ERROR);
-				throw new ImportFailure('Import Failure', 1200);
-		}
-		if (isset($resp['import'][0]['revisions']))
-			return $resp['import'][0]['revisions'];
-		$this->log('Failed to import file '.$file.' with error 1200 Import Failure', LG_ERROR);
-		throw new ImportFailure('Import Failure', 1200);
 	}
 	
 	/**
