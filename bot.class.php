@@ -1036,6 +1036,19 @@ EOD;
 		return true;
 	}
 	
+	public function export($page) {
+		$resp = $this->getAPI('action=query&titles='.urlencode($page).'&export');
+		//var_dump($resp);
+		$i = new ExportedPage;
+		foreach ($resp['query']['pages'] as $b) {
+			$i->id = $b['pageid'];
+			$i->ns = $b['ns'];
+			$i->title = $b['title'];
+		}
+		$i->xml = $resp['query']['export']['*'];
+		return $i;
+	}
+	
 	/* Internal Methods */
 	/**
 	 * Change a page's content
@@ -1320,4 +1333,44 @@ EOD;
 	protected function is_url($url) {
 		return (bool)preg_match('/^(http|https|ftp):\/\/[A-Za-z0-9]+\.[A-Za-z0-9]+[\/=\?%\-&_~`@[\]\':+!]*([^<>\"])*$/', $url);
 	}
+}
+
+
+/**
+ * A class for one exported pages
+ *
+ */
+class ExportedPage {
+	
+	/**
+	 * XML Export
+	 *
+	 * @var string 
+	 *
+	 */
+	public $xml;
+	
+	/**
+	 * Page id
+	 *
+	 * @var int 
+	 *
+	 */
+	public $id;
+	
+	/**
+	 * Page Namespace ID
+	 *
+	 * @var int 
+	 *
+	 */
+	public $ns;
+	
+	/**
+	 * Page title
+	 *
+	 * @var string 
+	 *
+	 */
+	public $title;
 }
