@@ -226,7 +226,7 @@ EOD;
 	 * Fetch a page from the wiki
 	 *
 	 * @param string $page The page name
-	 * @return string The page content
+	 * @return object A instance of WikiPage containing all information this function can get
 	 * @throws GetPageFailure when failure
 	 *
 	 */
@@ -250,8 +250,18 @@ EOD;
 						$this->log('Page \''.$page.'\' is a special page!', LG_ERROR);
 					throw new GetPageFailure('Special Page', 203);
 				else:
-					if (is_string($v['revisions'][0]['*'])):
-						return $v['revisions'][0]['*'];
+					if (isset($v['revisions'][0]['*']) && is_string($v['revisions'][0]['*'])):
+						$i = new WikiPage;
+						$i->text = $v['revisions'][0]['*'];
+						$i->title = $v['title'];
+						$i->ns = $v['ns'];
+						$i->id = $v['pageid'];
+						$j = strstr($i->title, ':', true);
+						if ($j)
+							$i->nsname = $j;
+						else
+							$i->nsname = true;
+						return $i;
 					else:
 						$this->log('Can\' fetch page \''.$page.'\' for some reason!', LG_ERROR);
 						throw new GetPageFailure('Can\'t Fetch Page', 200);
@@ -275,7 +285,7 @@ EOD;
 		$response = $this->postAPI('action=query&prop=categories&titles='.urlencode($page));
 		//var_dump($response);
 		foreach ($response['query']['pages'] as $key => $value) {
-			var_dump($value);
+			//var_dump($value);
 			if (!isset($value['categories'])) return false;
 			foreach ($value['categories'] as $key2 => $value2) {
 				$cats[] = $value2['title'];
@@ -1088,6 +1098,8 @@ EOD;
 		}
 		return $c;
 	}
+	
+	
 	
 	/* Internal Methods */
 	/**

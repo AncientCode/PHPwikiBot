@@ -7,6 +7,39 @@
  * @license http://www.gnu.org/licenses/gpl.html GPLv3+
  */
 
+
+/**
+ * One single page on the wiki with only one revision
+ * @package DataObjects
+ */
+class WikiPage {
+	/**
+	 * Namespace
+	 * @var int
+	 */
+	public $ns;
+	/**
+	 * Namespace user-friendly name
+	 * @var string
+	 */
+	public $nsname;
+	/**
+	 * Page content of current revision
+	 * @var string
+	 */
+	public $text;
+	/**
+	 * Page ID
+	 * @var int
+	 */
+	public $id;
+	/**
+	 * Page title
+	 * @var string 
+	 */
+	public $title;
+}
+
 /**
  * A class for one exported pages
  * @package DataObjects
