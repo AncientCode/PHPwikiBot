@@ -10,3 +10,12 @@ Some Features are:
 Requirements: For most functions, MediaWiki 1.15+ is enough and it's used on most wikis. 1.12+ works for most functions. You really should use 1.16+ since the upload is done with API which is supported only in 1.16+.
 
 Certain features are not implemented because this is designed mainly for bots, I mean, bot users. Watch are used mainly by normal user so it not a priority.
+
+Mirrors:
+git://git.tuxfamily.org/gitroot/softx/phpwikibot.git
+git://repo.or.cz/phpwikibot.git
+http://repo.or.cz/r/phpwikibot.git
+git://github.com/xiaomao5/PHPwikiBot.git
+
+SVN, Far Behind:
+svn://svn.tuxfamily.org/svnroot/softx/phpwikibot/trunk

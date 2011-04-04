@@ -143,6 +143,7 @@ class PHPwikiBot {
 		$this->output_log = $GLOBALS['output_log']; // Whether to output logs to stdout/stderr
 		/** Initialize */
 		$this->conninit(); // Initialize cURL handles
+		// Trying to Login
 		try {
 			$this->login($user, $pass);
 		} catch (LoginFailure $e) {
@@ -151,11 +152,11 @@ class PHPwikiBot {
 	}
 	
 	/**
-	 * Clear the cookies when the script terminates
+	 * Clear the cookies when the script terminates or the bot object is destroyed
 	 */
 	function __destruct() {
-		$this->logout();
-		fclose($this->logh);
+		$this->logout(); // Logs out
+		fclose($this->logh); // Close the log handle
 	}
 	
 	/**
@@ -166,12 +167,12 @@ class PHPwikiBot {
 	 */
 	function __toString() {
 		// Get all required info
-		$name = $this->user;
-		$wikid = $this->wikid;
-		$wikiname = $this->wikiname;
-		$useragent = $this->useragent;
-		$api = $this->api_url;
-		if (function_exists('openssl_decrypt')) $crypt = 'yes';
+		$name = $this->user; // User name
+		$wikid = $this->wikid; // Wiki ID in configuration
+		$wikiname = $this->wikiname; // Wiki Name
+		$useragent = $this->useragent; // Bot User-Agent
+		$api = $this->api_url; // Path to API
+		if (function_exists('openssl_decrypt')) $crypt = 'yes'; // Encrypted password
 		else $crypt = 'no';
 		return <<<EOD
 Username: $name
@@ -195,11 +196,10 @@ EOD;
 	public function __call($name, $arguments) {
 		// Logs before throwing exceptions
 		$this->log('Called unexist method "'.$name.'('.implode(', ', $arguments).'"!', LG_FATAL);
-		throw new BotException('Unexist Method', 10);
+		throw new BotException('Unexist Method', 10); // Called to Unexisted Method
 	}
 	
 	/* Public Callable Methods */
-	
 	/**
 	 * Get General wiki info
 	 *
@@ -209,16 +209,15 @@ EOD;
 	 * 
 	 */
 	public function wiki_info ($type = '') {
-		$response = $this->getAPI('action=query&meta=siteinfo');
-		if (!is_array($response)) throw new InfoFailure ('Can\'t Get Info', 300);
+		$response = $this->getAPI('action=query&meta=siteinfo'); // Query the server
+		if (!is_array($response)) throw new InfoFailure ('Can\'t Get Info', 300); // Failure
 		if ($type):
-			if (isset($response['query']['general'][$type])):
-				return $response['query']['general'][$type];
-			else:
-				throw new InfoFailure ('Not in Gereral Info', 301);
-			endif;
+			if (isset($response['query']['general'][$type]))
+				return $response['query']['general'][$type]; // Returns the information in $type
+			else
+				throw new InfoFailure ('Not in Gereral Info', 301); // Doesn't have it
 		else:
-			return $response['query']['general'];
+			return $response['query']['general']; // Return all
 		endif;
 	}
 	
@@ -231,37 +230,37 @@ EOD;
 	 *
 	 */
 	public function get_page($page, $internal = false) {
-		$response = $this->getAPI('action=query&prop=revisions&titles='.urlencode($page).'&rvprop=content');
+		$response = $this->getAPI('action=query&prop=revisions&titles='.urlencode($page).'&rvprop=content'); // Query
 		//var_dump($response);
-		if (is_array($response)) {
-			$array = $response['query']['pages'];
+		if (is_array($response)) { // Make sure there are no errors
+			$array = $response['query']['pages']; // Create a temperory variable
 			//var_dump($array);
 			foreach ($array as $v) {
 				if (isset($v['missing'])):
-					if (!$internal)
+					if (!$internal) // Only logs in out-class use
 						$this->log('Page \''.$page.'\' doesn\'t exist!', LG_ERROR);
 					throw new GetPageFailure('Page doesn\'t exist', 201);
 				elseif (isset($v['invalid'])):
-					if (!$internal)
+					if (!$internal) // Only logs in out-class use
 						$this->log('Page title \''.$page.'\' is invalid!', LG_ERROR);
 					throw new GetPageFailure('Page title invaild', 202);
 				elseif (isset($v['special'])):
-					if (!$internal)
+					if (!$internal) // Only logs in out-class use
 						$this->log('Page \''.$page.'\' is a special page!', LG_ERROR);
 					throw new GetPageFailure('Special Page', 203);
 				else:
-					if (isset($v['revisions'][0]['*']) && is_string($v['revisions'][0]['*'])):
-						$i = new WikiPage;
-						$i->text = $v['revisions'][0]['*'];
-						$i->title = $v['title'];
-						$i->ns = $v['ns'];
-						$i->id = $v['pageid'];
-						$j = strstr($i->title, ':', true);
+					if (isset($v['revisions'][0]['*']) && is_string($v['revisions'][0]['*'])): // If every thing is proper
+						$i = new WikiPage; // Create a new WikiPage class
+						$i->text = $v['revisions'][0]['*']; // Page text
+						$i->title = $v['title']; // Title
+						$i->ns = $v['ns']; // Namespace ID
+						$i->id = $v['pageid']; // Page ID
+						$j = strstr($i->title, ':', true); // Namespace Name
 						if ($j)
-							$i->nsname = $j;
+							$i->nsname = $j; // A page with named namespace
 						else
-							$i->nsname = true;
-						return $i;
+							$i->nsname = true; // The main namespace
+						return $i; // Returns the class
 					else:
 						$this->log('Can\' fetch page \''.$page.'\' for some reason!', LG_ERROR);
 						throw new GetPageFailure('Can\'t Fetch Page', 200);
@@ -282,14 +281,13 @@ EOD;
 	 *
 	 */
 	public function get_page_cat($page) {
-		$response = $this->postAPI('action=query&prop=categories&titles='.urlencode($page));
+		$response = $this->postAPI('action=query&prop=categories&titles='.urlencode($page)); // Query
 		//var_dump($response);
-		foreach ($response['query']['pages'] as $key => $value) {
+		foreach ($response['query']['pages'] as $key => $value) { // Foreach into the array
 			//var_dump($value);
-			if (!isset($value['categories'])) return false;
-			foreach ($value['categories'] as $key2 => $value2) {
-				$cats[] = $value2['title'];
-			}
+			if (!isset($value['categories'])) return false; // No categories
+			foreach ($value['categories'] as $key2 => $value2)
+				$cats[] = $value2['title']; // Get all categories into the array
 		}
 		//var_dump($cats);
 		return $cats;
@@ -307,24 +305,23 @@ EOD;
 	 *
 	 */
 	public function category($category, $limit = 500, $start = '', $ns = 'all') {
-		$query = 'action=query&list=categorymembers&cmtitle=' . urlencode('Category:' . $category) . '&cmlimit=' . $limit;
+		$query = 'action=query&list=categorymembers&cmtitle=' . urlencode('Category:' . $category) . '&cmlimit=' . $limit; // Query template
 		if ($ns != 'all')
-			$query .= '&cmnamespace=' . $ns;
+			$query .= '&cmnamespace=' . $ns; // Namespace Selection
 		if ($start != '')
-			$query .= '&cmcontinue=' . urlencode($start);
-		$result = $this->postAPI($query);
-		$cm = $result['query']['categorymembers'];
-		$pages = array();
-		$j = count($cm);
+			$query .= '&cmcontinue=' . urlencode($start); // Begins at page..., Continuing
+		$result = $this->postAPI($query); // Query
+		$cm = $result['query']['categorymembers']; // Temp variable
+		$pages = array(); // Array of pages
+		$j = count($cm); // Amount of pages
 		for ($i = 0; $i < $j; ++$i)
-			$pages[] = $cm[$i]['title'];
-		if (isset($result['query-continue']['categorymembers']['cmcontinue'])) {
+			$pages[] = $cm[$i]['title']; // Get the page name into $pages
+		if (isset($result['query-continue']['categorymembers']['cmcontinue'])) { // Continuing
 			$next = $result['query-continue']['categorymembers']['cmcontinue'];
-			if ($next != '') {
-				array_push($pages, $next);
-			}
+			if ($next != '')
+				array_push($pages, $next); // Push the array
 		}
-		return $pages;
+		return $pages; // Returns $pages
 	}
 	
 	/**
@@ -339,18 +336,18 @@ EOD;
 	 * @throws EditFailure
 	 */
 	public function create_page($page, $text, $summary, $minor = false, $force = false) {
-		$response = $this->postAPI('action=query&prop=info|revisions&intoken=edit&titles=' . urlencode($page));
-		$this->editdetails = $response['query']['pages'];
-		if (!isset($this->editdetails[-1])) throw new EditFailure('Page Exists', 420);
-		$bot = false;
-		if (isset($this->conf['bot']) && $this->conf['bot'] == true) $bot = true;
-		try {
+		$response = $this->postAPI('action=query&prop=info|revisions&intoken=edit&titles=' . urlencode($page)); // Get a token and basic info
+		$this->editdetails = $response['query']['pages']; // Assign info to be used with put_page
+		if (!isset($this->editdetails[-1])) throw new EditFailure('Page Exists', 420); // Page existed
+		$bot = false; // Not using bot account
+		if (isset($this->conf['bot']) && $this->conf['bot'] == true) $bot = true; // Using bot account
+		try { // Try to put_page()
 			$this->put_page($page, $text, $summary, $minor, $bot);
 			return true;
 		} catch (EditFailure $e) {
-			throw $e;
+			throw $e; // Rethrow the exception
 		}
-		$this->editdetails = null;
+		$this->editdetails = null; // Clears the shared property
 	}
 	
 	/**
@@ -365,18 +362,18 @@ EOD;
 	 * @throws EditFailure
 	 */
 	public function edit_page($page, $text, $summary, $minor = false, $force = false) {
-		$response = $this->postAPI('action=query&prop=info|revisions&intoken=edit&titles=' . urlencode($page));
-		$this->editdetails = $response['query']['pages'];
-		if (isset($this->editdetails[-1])) throw new EditFailure('Page Doesn\'t Exist', 421);
-		$bot = false;
-		if (isset($this->conf['bot']) && $this->conf['bot'] == true) $bot = true;
-		try {
+		$response = $this->postAPI('action=query&prop=info|revisions&intoken=edit&titles=' . urlencode($page)); // Get data
+		$this->editdetails = $response['query']['pages']; // Push the data into shared property
+		if (isset($this->editdetails[-1])) throw new EditFailure('Page Doesn\'t Exist', 421); // Page doesn't exist
+		$bot = false; // Not using bot account
+		if (isset($this->conf['bot']) && $this->conf['bot'] == true) $bot = true; // Using bot account
+		try { // Try to put_page()
 			$this->put_page($page, $text, $summary, $minor, $bot);
 			return true;
 		} catch (EditFailure $e) {
-			throw $e;
+			throw $e; // Rethrow the exception
 		}
-		$this->editdetails = null;
+		$this->editdetails = null; // Clears the shared property
 	}
 	
 	/**
