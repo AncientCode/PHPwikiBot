@@ -16,6 +16,7 @@ git://git.tuxfamily.org/gitroot/softx/phpwikibot.git
 git://repo.or.cz/phpwikibot.git
 http://repo.or.cz/r/phpwikibot.git
 git://github.com/xiaomao5/PHPwikiBot.git
+https://git.bettercodes.org/phpwikibot/
 
 SVN, Far Behind:
 svn://svn.tuxfamily.org/svnroot/softx/phpwikibot/trunk
